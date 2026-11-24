@@ -27,3 +27,38 @@ it('envia o código da prévia de cada tubo, não o número compartilhado do ped
   expect(enviados.etiquetas.map((e: { codigoAmostra: string }) => e.codigoAmostra)).toEqual(['296-00-1-2', '296-00-2-2', '296-00-3-2'])
   expect(enviados.etiquetas.map((e: { codigoExterno: string }) => e.codigoExterno)).toEqual(['296-00', '296-00', '296-00'])
 })
+
+it('imprime o total de etiquetas pedido, repetindo os tubos', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, etiquetas: 4 }) })
+  vi.stubGlobal('fetch', fetchMock)
+  render(<SampleLabelsPrintModal
+    open onClose={() => {}} orderNumber="296-00" patientName="PACIENTE TESTE" total={4}
+    labels={[
+      { sampleId: '296-00-1-2', labelIndex: 1, material: 'GEL', tube: 'GEL', workbench: 'BIOQUÍMICA' },
+      { sampleId: '296-00-2-2', labelIndex: 2, material: 'EDTA', tube: 'EDTA', workbench: 'HEMATOLOGIA' },
+    ]}
+  />)
+  fireEvent.click(screen.getByRole('button', { name: /^Imprimir$/ }))
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+  const enviados = JSON.parse(fetchMock.mock.calls[1][1].body)
+  expect(enviados.etiquetas.map((e: { codigoAmostra: string }) => e.codigoAmostra))
+    .toEqual(['296-00-1-2', '296-00-2-2', '296-00-1-2', '296-00-2-2'])
+  expect(enviados.etiquetas.filter((e: { fimPedido: boolean }) => e.fimPedido)).toHaveLength(1)
+})
+
+it('sem quantidade pedida, sai uma etiqueta por tubo', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, etiquetas: 2 }) })
+  vi.stubGlobal('fetch', fetchMock)
+  render(<SampleLabelsPrintModal
+    open onClose={() => {}} orderNumber="296-00" patientName="PACIENTE TESTE"
+    labels={[
+      { sampleId: '296-00-1-2', labelIndex: 1, material: 'GEL', tube: 'GEL', workbench: 'BIOQUÍMICA' },
+      { sampleId: '296-00-2-2', labelIndex: 2, material: 'EDTA', tube: 'EDTA', workbench: 'HEMATOLOGIA' },
+    ]}
+  />)
+  fireEvent.click(screen.getByRole('button', { name: /^Imprimir$/ }))
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+  const enviados = JSON.parse(fetchMock.mock.calls[1][1].body)
+  expect(enviados.etiquetas.map((e: { codigoAmostra: string }) => e.codigoAmostra))
+    .toEqual(['296-00-1-2', '296-00-2-2'])
+})

@@ -11,7 +11,7 @@ import { buildSampleCode } from '@/utils/orderHash'
 import { useCompanySequenceIdState } from '@/hooks/useCompanySequenceId'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { SampleLabelsPrintModal } from './SampleLabelsPrintModal'
-import { dataColetaDoTubo, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
+import { dataColetaDoTubo, etiquetasParaImprimir, qtdEtiquetasValida, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
 
 interface Props {
   open: boolean
@@ -23,9 +23,11 @@ interface Props {
   autoPrint?: boolean
   onPrinted?: () => void
   extra?: CamposEtiquetaExtra
+  /** Total de etiquetas escolhido no modal de tipo de impressão (1 a 50). */
+  total?: number
 }
 
-export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoPrint, onPrinted, extra }: Props) {
+export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoPrint, onPrinted, extra, total }: Props) {
   const seqState = useCompanySequenceIdState()
   // Código do tubo usa o número da empresa gravado no pedido (nunca muda)
   const congelado = order?.empresaSeq ?? order?.empresa_seq
@@ -97,6 +99,8 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
     })
 
   const chosen = tubes.filter(t => selected.has(t.code))
+  const quantidade = total == null ? Math.max(chosen.length, 1) : qtdEtiquetasValida(total)
+  const totalEtiquetas = etiquetasParaImprimir(chosen, quantidade).length
 
   if (!open) return null
 
@@ -149,7 +153,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
           <div className="flex items-center justify-end gap-2 border-t border-border bg-muted/30 px-5 py-3">
             <Button variant="outline" size="sm" onClick={onClose} className="text-xs font-bold uppercase">Cancelar</Button>
             <Button size="sm" disabled={!chosen.length} onClick={() => setPrintOpen(true)} className="text-xs font-bold uppercase">
-              <Printer className="h-4 w-4 mr-1" /> Imprimir ({chosen.length})
+              <Printer className="h-4 w-4 mr-1" /> Imprimir ({totalEtiquetas})
             </Button>
           </div>
         </DialogContent>
@@ -160,6 +164,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
         autoPrint={autoPrint}
         onPrinted={onPrinted}
         extra={extra}
+        total={quantidade}
         onClose={() => { setPrintOpen(false); if (autoPrint) onClose() }}
         orderNumber={order?.orderNumber || ''}
         patientName={order?.patientName || ''}

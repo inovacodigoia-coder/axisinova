@@ -1,5 +1,5 @@
 import { useAtendimentoDetalhesPermissions } from '@/hooks/useAtendimentoDetalhesPermissions'
-import { CAMPOS_EXTRA_PADRAO, dataColetaDoTubo, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra';
+import { CAMPOS_EXTRA_PADRAO, dataColetaDoTubo, qtdEtiquetasValida, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra';
 import { attendanceExamStatus } from '@/utils/attendanceExamStatus'
 import { formatCPF, formatPhone, formatAge, formatGender, formatAddress } from "@/utils/formatters"
 import { fmtDiaMes } from '@/lib/apoioAtendimento'
@@ -97,6 +97,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [selectedTubes, setSelectedTubes] = useState<Set<string>>(new Set())
   const [labelsPrintOpen, setLabelsPrintOpen] = useState(false)
   const [labelsExtra, setLabelsExtra] = useState<CamposEtiquetaExtra | undefined>()
+  const [labelsTotal, setLabelsTotal] = useState(1)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [mudarOrigemOpen, setMudarOrigemOpen] = useState(false)
@@ -1337,6 +1338,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           const extraSel = result.options.find((o: any) => o.id === 'etiqueta_extra' && o.enabled);
           if (extraSel || result.options.find((o: any) => o.id === 'etiquetas' && o.enabled)) {
             setLabelsExtra(extraSel ? (result.camposExtra || CAMPOS_EXTRA_PADRAO) : undefined);
+            setLabelsTotal(extraSel ? qtdEtiquetasValida(result.qtdEtiquetas ?? 1) : 1);
             if (selectedTubes.size === 0) {
               setSelectedTubes(new Set(patientTubes.map((_, idx) => sampleCodeFor(idx + 1))));
             }
@@ -1470,6 +1472,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
             collectedAt: dataColetaDoTubo(examsForTube(tube)),
           }))}
         extra={labelsExtra}
+        total={labelsTotal}
         labName={settings?.lab_name || ''}
       />
 

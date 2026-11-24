@@ -24,3 +24,24 @@ export function dadosEtiquetaExtra(
     dataHora: formatarDataEtiqueta(coleta && !isNaN(coleta.getTime()) ? coleta : agora),
   }
 }
+
+/** Quantidade de etiquetas: total de etiquetas que vai sair, de 1 a 50. */
+export const QTD_ETIQUETAS_MIN = 1
+export const QTD_ETIQUETAS_MAX = 50
+
+/** Normaliza a quantidade digitada: inteiro dentro do intervalo, senão volta ao mínimo. */
+export function qtdEtiquetasValida(valor: unknown): number {
+  const n = Math.floor(Number(valor))
+  if (!Number.isFinite(n)) return QTD_ETIQUETAS_MIN
+  return Math.min(QTD_ETIQUETAS_MAX, Math.max(QTD_ETIQUETAS_MIN, n))
+}
+
+/**
+ * Etiquetas que vão sair: repete os tubos na mesma ordem até chegar na quantidade
+ * total pedida. Ex.: 2 tubos e total 5 → tubo 1, 2, 1, 2, 1.
+ */
+export function etiquetasParaImprimir<T>(labels: T[], total: number): T[] {
+  if (!labels.length) return []
+  const n = qtdEtiquetasValida(total)
+  return Array.from({ length: n }, (_, i) => labels[i % labels.length])
+}

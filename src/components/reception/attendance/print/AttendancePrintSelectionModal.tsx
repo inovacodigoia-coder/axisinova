@@ -5,14 +5,14 @@ import { CheckCircle2, X, Droplets, AlertTriangle, Loader2, Printer } from 'luci
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useAttendanceOrderActions } from '@/hooks/useAttendanceCadastro';
-import { tuboDoExame, tuboInfo } from '@/lib/tubos';
+import { tuboDoExame, tuboInfo, etiquetasDosExames, examesDoTubo } from '@/lib/tubos';
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types';
 import { canSetCollectionDone } from '@/utils/orderStatusFlow';
 import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoStatus';
 import { useDocumentTemplates } from '@/hooks/useDocumentTemplates';
 import { DocumentPrintDialog } from '@/components/documents/DocumentPrintDialog';
 import { useNavigate } from 'react-router-dom';
-import { CAMPOS_EXTRA_PADRAO, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra';
+import { CAMPOS_EXTRA_PADRAO, QTD_ETIQUETAS_MAX, QTD_ETIQUETAS_MIN, qtdEtiquetasValida, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra';
 
 interface PrintOption {
   id: string;
@@ -74,6 +74,9 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     { id: 'etiqueta_extra', label: 'Etiqueta Extra', enabled: false, formats: ['ETIQUETA'], selectedFormat: 'ETIQUETA' },
   ]);
   const [camposExtra, setCamposExtra] = useState<CamposEtiquetaExtra>(CAMPOS_EXTRA_PADRAO);
+  const [qtdEtiquetas, setQtdEtiquetas] = useState(1);
+  // Enquanto o usuário não mexer, a quantidade é uma etiqueta por tubo.
+  const qtdAjustada = React.useRef(false);
   const isLabel = (id: string) => id === 'etiquetas' || id === 'etiqueta_extra';
 
   const [confirmCollection, setConfirmCollection] = useState(false);
@@ -86,6 +89,8 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       setOptions(prev => prev.map(o => ({ ...o, enabled: false })));
       setConfirmCollection(false);
       setSelectedMaterials(new Set());
+      setQtdEtiquetas(1);
+      qtdAjustada.current = false;
     }
   }, [open]);
 
@@ -141,6 +146,15 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   // Bloqueio independe da seleção e também considera o status AGUARDANDO.
   const labelsBlocked = (isAwaitingCollection || !allCollected) && !willCollect;
 
+  // Etiquetas previstas: mesmo cálculo das telas de etiqueta (tubos comuns + coletas seguintes)
+  const tubesPrevistos = useMemo(() => etiquetasDosExames(allExams).map((t: any) => {
+    const tubeExams = examesDoTubo(allExams, t)
+    return { collected: tubeExams.length > 0 && tubeExams.every((e: any) => !!e.collected) }
+  }), [allExams]);
+  const tubosParaEtiquetar = willCollect ? tubesPrevistos.length : tubesPrevistos.filter(t => t.collected).length;
+  // O número digitado é o TOTAL de etiquetas: os tubos se repetem até chegar nele.
+  const totalEtiquetasPrevisto = tubosParaEtiquetar ? qtdEtiquetas : 0;
+
   // Seleção única: apenas um tipo de impressão por vez
   const toggleOption = (id: string) => {
     if (isLabel(id) && labelsBlocked) {
@@ -157,6 +171,10 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
         ? (opt.id === id ? { ...opt, enabled: !opt.enabled } : opt)
         : { ...opt, enabled: opt.id === id }
     ));
+    // Ao ligar a Etiqueta Extra sem o usuário ter ajustado, começa com uma por tubo.
+    if (id === 'etiqueta_extra' && !options.find(o => o.id === id)?.enabled && !qtdAjustada.current) {
+      setQtdEtiquetas(Math.max(1, tubosParaEtiquetar));
+    }
   };
 
   const setFormat = (id: string, format: any) => {
@@ -219,7 +237,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       action: 'print',
       optionId: opt.id,
       options: options.map(o => ({ ...o, enabled: o.id === opt.id })),
-      extras, camposExtra,
+      extras, camposExtra, qtdEtiquetas,
       printerSettings,
       watermark,
       emptyFields,
@@ -247,7 +265,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     }
     const enabled = options.filter(o => o.enabled);
     if (!multiSelect && enabled.some(o => o.id === 'termo_consentimento')) {
-      dispatchPrint({ action: 'print', optionId: 'termo_consentimento', options: options.map(o => ({ ...o, enabled: o.id === 'termo_consentimento' })), extras, camposExtra, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
+      dispatchPrint({ action: 'print', optionId: 'termo_consentimento', options: options.map(o => ({ ...o, enabled: o.id === 'termo_consentimento' })), extras, camposExtra, qtdEtiquetas, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
       return;
     }
     if (multiSelect && enabled.length > 0) {
@@ -255,7 +273,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
         action: 'print-batch',
         options,
         queue: enabled.map(o => ({ id: o.id, format: o.selectedFormat })),
-        extras, camposExtra,
+        extras, camposExtra, qtdEtiquetas,
         printerSettings,
         watermark,
         emptyFields,
@@ -266,7 +284,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       });
       return;
     }
-    onConfirm({ action: 'confirm', options, extras, camposExtra, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
+    onConfirm({ action: 'confirm', options, extras, camposExtra, qtdEtiquetas, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
   };
 
   return (
@@ -299,6 +317,11 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
                         onClick={() => toggleOption(opt.id)}
+                        role="checkbox"
+                        aria-checked={opt.enabled}
+                        aria-label={opt.label}
+                        tabIndex={0}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleOption(opt.id) } }}
                         className={cn(
                           "w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-all shrink-0",
                           isLabel(opt.id) && labelsBlocked
@@ -308,8 +331,10 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                       >
                         {opt.enabled && <CheckCircle2 className="h-2.5 w-2.5 text-white" />}
                       </div>
-                      <span className={cn(
-                        "text-[13px] font-medium truncate transition-colors",
+                      <span
+                        onClick={() => toggleOption(opt.id)}
+                        className={cn(
+                        "text-[13px] font-medium truncate transition-colors cursor-pointer",
                         isLabel(opt.id) && labelsBlocked ? "text-red-600" : opt.enabled ? "text-slate-900" : "text-slate-400"
                       )}>
                         {opt.label}
@@ -361,6 +386,48 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                           {rotulo}
                         </label>
                       ))}
+                    </div>
+                  )}
+                  {opt.id === 'etiqueta_extra' && opt.enabled && (
+                    <div className="ml-6 mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-600">
+                      <span className="font-medium">Quantidade de etiquetas</span>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          aria-label="Diminuir quantidade de etiquetas"
+                          onClick={() => { qtdAjustada.current = true; setQtdEtiquetas(q => qtdEtiquetasValida(q - 1)) }}
+                          disabled={qtdEtiquetas <= QTD_ETIQUETAS_MIN}
+                          className="h-5 w-5 rounded border border-slate-300 text-slate-600 leading-none disabled:opacity-40"
+                        >
+                          −
+                        </button>
+                        <input
+                          type="number"
+                          inputMode="numeric"
+                          aria-label="Quantidade de etiquetas"
+                          min={QTD_ETIQUETAS_MIN}
+                          max={QTD_ETIQUETAS_MAX}
+                          value={qtdEtiquetas}
+                          onChange={(e) => { qtdAjustada.current = true; setQtdEtiquetas(qtdEtiquetasValida(e.target.value)) }}
+                          className="h-5 w-12 rounded border border-slate-300 px-1 text-center text-[11px] font-bold text-slate-800"
+                        />
+                        <button
+                          type="button"
+                          aria-label="Aumentar quantidade de etiquetas"
+                          onClick={() => { qtdAjustada.current = true; setQtdEtiquetas(q => qtdEtiquetasValida(q + 1)) }}
+                          disabled={qtdEtiquetas >= QTD_ETIQUETAS_MAX}
+                          className="h-5 w-5 rounded border border-slate-300 text-slate-600 leading-none disabled:opacity-40"
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span className="text-slate-400">total de etiquetas</span>
+                      <span className="w-full text-[11px] font-bold text-slate-700">
+                        Serão impressas {totalEtiquetasPrevisto} etiqueta(s)
+                        {tubosParaEtiquetar > 0
+                          ? ` — ${tubosParaEtiquetar} tubo(s) repetidos até ${qtdEtiquetas}`
+                          : ' — nenhum tubo coletado'}
+                      </span>
                     </div>
                   )}
                   {isLabel(opt.id) && labelsBlocked && (

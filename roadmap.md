@@ -301,3 +301,8 @@
 - [x] Pedidos imutáveis + transições + auditoria; segredo oculto com colunas explícitas; parceiros só com permissão; visitante sem acesso (migração 0201).
 - [x] 29 testes novos + 61 existentes; recusa de visitante na publicada; script de reversão.
 - [ ] Conferir as telas logado: sem sessão autorizada.
+
+# Quantidade de etiquetas (Etiqueta Extra)
+- [x] Campo "Quantidade de etiquetas" (total de 1 a 50) só na Etiqueta Extra, com total previsto no modal; sem mexer, uma por tubo.
+- [x] O total vale para prévia e envio à impressora, repetindo os tubos; Etiquetas de Amostra continuam uma por tubo.
+- [ ] Conferir na tela com login real.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Printer, X, Loader2 } from 'lucide-react'
@@ -8,7 +8,7 @@ import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoSta
 import { servidorImpressaoAtivo, imprimirEtiquetas, TIPOS_DOCUMENTO, DadosEtiqueta } from '@/lib/impressaoLocal'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { generateSampleHash } from '@/utils/orderHash'
-import { dadosEtiquetaExtra, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
+import { dadosEtiquetaExtra, etiquetasParaImprimir, qtdEtiquetasValida, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
 
 
 /** Formata a data de nascimento sem sofrer deslocamento de fuso horario. */
@@ -49,6 +49,8 @@ interface Props {
   onPrinted?: () => void
   /** Etiqueta extra: campos escolhidos pelo usuário */
   extra?: CamposEtiquetaExtra
+  /** Total de etiquetas que vai sair (1 a 50); os tubos se repetem até chegar nele. Padrão 1. */
+  total?: number
 }
 
 export function SampleLabelsPrintModal({
@@ -65,7 +67,13 @@ export function SampleLabelsPrintModal({
   labName,
   onPrinted,
   extra,
+  total,
 }: Props) {
+  // Sem quantidade pedida: uma etiqueta por tubo, como sempre foi.
+  const quantidade = total == null ? Math.max(labels.length, 1) : qtdEtiquetasValida(total)
+  // Total pedido: os tubos se repetem na ordem até chegar na quantidade.
+  // A prévia e o envio à impressora usam exatamente a mesma lista.
+  const labelsFinais = useMemo(() => etiquetasParaImprimir(labels, quantidade), [labels, quantidade])
   const ex = (l: SampleLabelData) => extra ? dadosEtiquetaExtra({ patientName, examNames: l.examNames, collectedAt: l.collectedAt }, extra) : null
 
   const [enviando, setEnviando] = useState(false)
@@ -102,9 +110,9 @@ export function SampleLabelsPrintModal({
     setEnviando(true)
     try {
       const ativo = await servidorImpressaoAtivo()
-      if (ativo && labels.length) {
+      if (ativo && labelsFinais.length) {
         // Envia TODAS as etiquetas do pedido em uma única chamada (um trabalho só).
-        const lista: DadosEtiqueta[] = labels.map((l, i) => { const e = ex(l); return {
+        const lista: DadosEtiqueta[] = labelsFinais.map((l, i) => { const e = ex(l); return {
           codigoAmostra: l.sampleId,
           codigoAlfanumerico: generateSampleHash(l.sampleId) || undefined,
           painel: l.workbench || undefined,
@@ -118,7 +126,7 @@ export function SampleLabelsPrintModal({
           exames: (e ? e.exames : (l.examRefs || [])).join(' ') || undefined,
           laboratorio: labName || undefined,
           urgente: !!isUrgent,
-          fimPedido: i === labels.length - 1,
+          fimPedido: i === labelsFinais.length - 1,
         } })
         const r = await imprimirEtiquetas(TIPOS_DOCUMENTO.etiquetaCliente, lista)
         toast.success(r.mensagem || `${r.etiquetas} etiqueta(s) enviada(s) para impressão.`)
@@ -138,11 +146,11 @@ export function SampleLabelsPrintModal({
   }
 
   useEffect(() => {
-    if (open && autoPrint && labels.length) {
+    if (open && autoPrint && labelsFinais.length) {
       const t = setTimeout(() => { void handlePrint() }, 400)
       return () => clearTimeout(t)
     }
-  }, [open, autoPrint, labels.length])
+  }, [open, autoPrint, labelsFinais.length])
 
 
   if (!open) return null
@@ -159,12 +167,13 @@ export function SampleLabelsPrintModal({
               {extra ? 'Etiqueta Extra' : 'Impressão de Etiquetas'}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Pedido {orderNumber} — {labels.length} etiqueta(s) selecionada(s)
+              Pedido {orderNumber} — {labelsFinais.length} etiqueta(s)
+              {quantidade > 1 && labels.length ? ` (${labels.length} tubo(s) repetidos até ${quantidade})` : ''}
             </p>
           </div>
           <div className="flex items-center gap-2">
             <ServidorImpressaoStatus />
-            <Button size="sm" onClick={handlePrint} disabled={!labels.length || enviando}>
+            <Button size="sm" onClick={handlePrint} disabled={!labelsFinais.length || enviando}>
               {enviando ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Printer className="h-4 w-4 mr-1" />}
               {enviando ? 'Enviando...' : 'Imprimir'}
             </Button>
@@ -196,14 +205,14 @@ export function SampleLabelsPrintModal({
             }
           `}</style>
           <div id="labels-print-root" className="flex flex-col items-center gap-3">
-            {labels.map((l, idx) => (
+            {labelsFinais.map((l, idx) => (
               <div
-                key={l.sampleId}
-                className={`label-sheet flex items-center justify-center overflow-hidden ${idx < labels.length - 1 ? 'print:break-after-page' : ''}`}
+                key={`${l.sampleId}-${idx}`}
+                className={`label-sheet flex items-center justify-center overflow-hidden ${idx < labelsFinais.length - 1 ? 'print:break-after-page' : ''}`}
                 style={{
                   width: `${sheetW}mm`,
                   height: `${sheetH}mm`,
-                  ...(idx === labels.length - 1 ? { breakAfter: 'avoid' as const, pageBreakAfter: 'avoid' as const } : {}),
+                  ...(idx === labelsFinais.length - 1 ? { breakAfter: 'avoid' as const, pageBreakAfter: 'avoid' as const } : {}),
                 }}
               >
                 <div style={config.rotation ? { transform: `rotate(${config.rotation}deg)` } : undefined}>
@@ -227,7 +236,7 @@ export function SampleLabelsPrintModal({
                 </div>
               </div>
             ))}
-            {!labels.length && (
+            {!labelsFinais.length && (
               <p className="text-sm text-muted-foreground">Nenhuma amostra selecionada.</p>
             )}
           </div>

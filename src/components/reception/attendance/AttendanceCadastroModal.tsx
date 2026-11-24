@@ -22,7 +22,7 @@ import { PaymentModal } from './payment/PaymentModal'
 import { AttendancePrintModal } from './print/AttendancePrintModal'
 import { AttendancePrintSelectionModal, tubeTypeForMaterial } from './print/AttendancePrintSelectionModal'
 import { SampleLabelsSelectModal } from './print/SampleLabelsSelectModal'
-import { CAMPOS_EXTRA_PADRAO, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
+import { CAMPOS_EXTRA_PADRAO, qtdEtiquetasValida, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
 import { LabStep1PatientReview } from '@/components/lab/attendance/steps/LabStep1PatientReview'
 import { LabStep2ExamData } from '@/components/lab/attendance/steps/LabStep2ExamData'
 import { validarApoio, aplicarNomeEnvio } from '@/lib/apoioAtendimento'
@@ -222,6 +222,8 @@ export function AttendanceCadastroModal({
   // Imprime, em sequência, todos os documentos marcados no modal de impressão
   const [labelsExtra, setLabelsExtra] = useState<CamposEtiquetaExtra | undefined>()
   const camposExtraRef = useRef<CamposEtiquetaExtra | null>(null)
+  const [labelsTotal, setLabelsTotal] = useState(1)
+  const qtdEtiquetasRef = useRef(1)
   const runPrintQueue = (queue: { id: string; format: string }[]) => {
     if (!queue.length) {
       setPrintQueue([])
@@ -237,6 +239,7 @@ export function AttendanceCadastroModal({
     if (next.id === 'etiquetas' || next.id === 'etiqueta_extra') {
       setShowPrint(false)
       setLabelsExtra(next.id === 'etiqueta_extra' ? (camposExtraRef.current || CAMPOS_EXTRA_PADRAO) : undefined)
+      setLabelsTotal(next.id === 'etiqueta_extra' ? qtdEtiquetasRef.current : 1)
       setShowLabelsSelect(true)
       return
     }
@@ -864,6 +867,7 @@ export function AttendanceCadastroModal({
               }) : prev)
             }
             camposExtraRef.current = opts?.camposExtra || null
+            qtdEtiquetasRef.current = qtdEtiquetasValida(opts?.qtdEtiquetas ?? 1)
             if (opts?.action === 'print-batch') {
               runPrintQueue(prepararFilaImpressao(opts.queue || []))
               return
@@ -885,6 +889,7 @@ export function AttendanceCadastroModal({
           order={createdOrder}
           autoPrint
           extra={labelsExtra}
+          total={labelsTotal}
           birthDate={state.patient?.birthDate}
           onPrinted={() => { setShowLabelsSelect(false); runPrintQueue(printQueue) }}
           onClose={() => { setShowLabelsSelect(false); runPrintQueue(printQueue) }}
