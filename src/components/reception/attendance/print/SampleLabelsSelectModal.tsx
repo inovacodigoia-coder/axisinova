@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Printer, X, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
-import { useMateriaisTubos, etiquetasDosExames, examesDoTubo, etiquetaTubo, refsEtiqueta } from '@/lib/tubos'
+import { useMateriaisTubos, etiquetasDosExames, examesDoTubo, etiquetaTubo, refsEtiqueta, resolvedoresEtiqueta } from '@/lib/tubos'
+import { useRegisters } from '@/context/RegistersContext'
 import { buildSampleCode } from '@/utils/orderHash'
 import { useCompanySequenceIdState } from '@/hooks/useCompanySequenceId'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -30,6 +31,8 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
   const { settings } = useLabSettings()
   const { user } = useAuth()
   const cad = useMateriaisTubos(user?.companyId)
+  const { exams: catalogExams, workbenches } = useRegisters()
+  const resolv = useMemo(() => resolvedoresEtiqueta(catalogExams, workbenches), [catalogExams, workbenches])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [printOpen, setPrintOpen] = useState(false)
 
@@ -147,8 +150,8 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
           sampleId: t.code,
           labelIndex: t.index,
           ...etiquetaTubo(t),
-          workbench: t.exams[0]?.workbench || 'GERAL',
-          examRefs: refsEtiqueta(t, exams, (e: any) => e.code || String(e.name || '').slice(0, 12)),
+          workbench: resolv.bancadaDoTubo(t.exams),
+          examRefs: refsEtiqueta(t, exams, resolv.codigoDoExame),
         }))}
       />
     </>

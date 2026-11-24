@@ -167,3 +167,30 @@ export function descricaoEtiqueta(tube: Tubo): string {
   const base = `${t.material.toUpperCase()}${t.tube ? ` (${t.tube})` : ''}`
   return tube.extra ? `${base} · ${tube.extra.coleta}` : base
 }
+
+/** Exame do catálogo correspondente ao exame do pedido (id, código interno/TUSS ou nome). */
+export function catalogoDoExame(e: any, catalogo: any[]): any | undefined {
+  return (catalogo || []).find((c: any) =>
+    c.id === (e.examId || e.id) ||
+    (e.code && (c.internalCode === e.code || c.tussCode === e.code)) ||
+    (e.name && String(c.name).toLowerCase() === String(e.name).toLowerCase()),
+  )
+}
+
+/** Bancada e código do exame usados pela prévia E pelo servidor de impressão (fonte única). */
+export function resolvedoresEtiqueta(catalogo: any[], bancadas: any[]) {
+  const bancadaDoExame = (e: any): string => {
+    const c = catalogoDoExame(e, catalogo)
+    const wb = (bancadas || []).find((w: any) => w.id === (c?.workbenchId || e.workbenchId))
+    return wb?.name || e.workbench || ''
+  }
+  const codigoDoExame = (e: any): string => {
+    const c = catalogoDoExame(e, catalogo)
+    return c?.internalCode || e.code || String(e.name || '').slice(0, 12)
+  }
+  const bancadaDoTubo = (tubeExams: any[]): string => {
+    const nomes = tubeExams.map(bancadaDoExame).filter(Boolean)
+    return Array.from(new Set(nomes)).join(' / ') || 'GERAL'
+  }
+  return { bancadaDoExame, codigoDoExame, bancadaDoTubo }
+}

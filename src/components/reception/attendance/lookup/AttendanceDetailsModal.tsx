@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { AttendanceOrder } from '@/types/attendance-cadastro.types'
 import type { Patient } from '@/types/patient.types'
 import type { LabAttendanceOrder } from '@/types/lab.types'
-import { tuboDoExame, etiquetasDosExames, examesDoTubo, useMateriaisTubos, etiquetaTubo, refsEtiqueta, descricaoEtiqueta } from '@/lib/tubos'
+import { tuboDoExame, etiquetasDosExames, examesDoTubo, useMateriaisTubos, etiquetaTubo, refsEtiqueta, descricaoEtiqueta, resolvedoresEtiqueta, catalogoDoExame } from '@/lib/tubos'
 import { cn } from '@/lib/utils'
 import { AttendancePrintSelectionModal } from '../print/AttendancePrintSelectionModal'
 import { SampleLabelsPrintModal } from '../print/SampleLabelsPrintModal'
@@ -218,29 +218,11 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
     return etiquetasDosExames(orderExams);
   }, [orderExams, cadTubos]);
 
-  // Bancada real do exame (catálogo -> lab_workbenches)
-  const findCatalog = (e: any) =>
-    catalogExams.find((c: any) =>
-      c.id === (e.examId || e.id) ||
-      (e.code && (c.internalCode === e.code || c.tussCode === e.code)) ||
-      (e.name && String(c.name).toLowerCase() === String(e.name).toLowerCase())
-    );
-
-  const workbenchOfExam = (e: any) => {
-    const c = findCatalog(e);
-    const wb = workbenches.find((w: any) => w.id === (c?.workbenchId || e.workbenchId));
-    return wb?.name || e.workbench || '';
-  };
-
-  const examRefOf = (e: any) => {
-    const c = findCatalog(e);
-    return c?.internalCode || e.code || String(e.name || '').slice(0, 12);
-  };
-
-  const tubeWorkbench = (tube: any) => {
-    const names = examsForTube(tube).map(workbenchOfExam).filter(Boolean);
-    return Array.from(new Set(names)).join(' / ') || 'GERAL';
-  };
+  // Bancada e código do exame: mesma fonte usada na impressão pelo servidor local
+  const resolv = useMemo(() => resolvedoresEtiqueta(catalogExams, workbenches), [catalogExams, workbenches]);
+  const examRefOf = resolv.codigoDoExame;
+  const findCatalog = (e: any) => catalogoDoExame(e, catalogExams);
+  const tubeWorkbench = (tube: any) => resolv.bancadaDoTubo(examsForTube(tube));
 
   // ---- Coleta por amostra ----
   const matchesTube = (examOrMaterial: any, tube: any) => tubeTypeForMaterial(examOrMaterial) === tube.type;
