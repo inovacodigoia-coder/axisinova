@@ -3,6 +3,7 @@ import { useCadastroRapidoExames } from '@/hooks/useCadastroRapidoExames';
 import { moverDestaque, abreBuscaPeloTeclado, exameCombinaBusca } from '@/lib/cadastroRapido';
 import { materialPorNome } from '@/lib/tubos'
 import { indiceExameNaGuia } from '@/lib/guiaExames'
+import { aplicarColetaPrevisao, coletaProgramadaDasGuias, formatarPrevisao, paraInputLocal } from '@/lib/previsaoColeta'
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -130,6 +131,14 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   const [showDeadlineModal, setShowDeadlineModal] = useState(false);
   const [tempDeadline, setTempDeadline] = useState('');
   const [tempCollectionDate, setTempCollectionDate] = useState('');
+  const [coletaAntes, setColetaAntes] = useState('');
+  const [aplicarTodos, setAplicarTodos] = useState(false);
+  const [podeProgramar, setPodeProgramar] = useState(false);
+  useEffect(() => {
+    (supabase as any).rpc('coleta_tem_permissao', { _perm: 'coleta.programar' })
+      .then(({ data }: any) => setPodeProgramar(!!data));
+  }, [user?.id, activeProfile?.id]);
+  const podeEditarColeta = canEditDeadline || podeProgramar;
 
 
   const addGuide = () => {
@@ -260,7 +269,10 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
     };
 
     setTempDeadline(normalizeToIso(exam.expectedDeliveryDate || await calculateDeadline(exam.resultDeadlineDays || 1, exam.prazoContagem === 'uteis' ? 'uteis' : 'corridos')));
-    setTempCollectionDate(new Date().toISOString());
+    const coleta = exam.collectedAt || new Date().toISOString();
+    setTempCollectionDate(coleta);
+    setColetaAntes(coleta);
+    setAplicarTodos(false);
     setShowDeadlineModal(true);
   };
 
@@ -833,7 +845,8 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                     <td className="px-4 py-4 text-xs">
                       {exam.collected && exam.expectedDeliveryDate ? (
                         <div className="flex items-center gap-2 text-primary font-medium">
-                          <span>{exam.expectedDeliveryDate}</span>
+                          <span>{formatarPrevisao(exam.expectedDeliveryDate)}</span>
+                          {exam.coletaProgramada && <span className="text-[9px] font-bold uppercase text-muted-foreground">coleta {formatarPrevisao(exam.collectedAt).slice(0, 10)}</span>}
                         </div>
                       ) : (
                         <span className="text-muted-foreground">—</span>
@@ -1068,31 +1081,49 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
               <div className="relative">
                 <Input 
                   type="datetime-local"
-                  value={tempCollectionDate ? tempCollectionDate.slice(0, 16) : ''} 
-                  onChange={(e) => setTempCollectionDate(new Date(e.target.value).toISOString())}
+                  value={paraInputLocal(tempCollectionDate)}
+                  onChange={(e) => {
+                    if (!e.target.value) return;
+                    const nova = new Date(e.target.value);
+                    if (!podeProgramar && nova.getTime() > Date.now()) { toast.error('Seu perfil não pode programar coleta para data futura'); return; }
+                    const delta = nova.getTime() - new Date(tempCollectionDate).getTime();
+                    setTempCollectionDate(nova.toISOString());
+                    if (tempDeadline && delta) setTempDeadline(new Date(new Date(tempDeadline).getTime() + delta).toISOString());
+                  }}
+                  {...(!podeProgramar ? { max: paraInputLocal(new Date().toISOString()) } : {})}
                   className="text-sm pr-10"
-                  disabled={!canEditDeadline}
+                  disabled={!podeEditarColeta}
                 />
-                {!canEditDeadline && (
+                {!podeEditarColeta && (
                   <Lock className="h-4 w-4 absolute right-2.5 top-3 text-muted-foreground/50" />
                 )}
               </div>
-              {!canEditDeadline && (
+              {!podeEditarColeta && (
                 <p className="text-[9px] text-rose-500 font-medium">Sem permissão para alterar data de coleta</p>
               )}
+              {podeProgramar && new Date(tempCollectionDate).getTime() > Date.now() && (
+                <p className="text-[9px] font-medium text-muted-foreground">Coleta programada para data futura — a previsão foi ajustada.</p>
+              )}
             </div>
-            
+
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground">Previsão de Entrega *</Label>
               <div className="relative">
                 <Input 
                   type="datetime-local"
-                  value={tempDeadline ? tempDeadline.slice(0, 16) : ''} 
-                  onChange={(e) => setTempDeadline(new Date(e.target.value).toISOString())}
+                  value={paraInputLocal(tempDeadline)}
+                  onChange={(e) => e.target.value && setTempDeadline(new Date(e.target.value).toISOString())}
                   className="text-sm"
                 />
               </div>
+              <p className="text-[10px] text-muted-foreground">{formatarPrevisao(tempDeadline)}</p>
             </div>
+            {(activeGuide?.exams.length || 0) > 1 && (
+              <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
+                <Switch checked={aplicarTodos} onCheckedChange={setAplicarTodos} />
+                Marcar para todos os exames
+              </label>
+            )}
           </div>
           <DialogFooter className="flex-row gap-2 sm:justify-center">
             <Button variant="ghost" className="flex-1 text-xs font-bold" onClick={() => setShowDeadlineModal(false)}>CANCELAR</Button>
@@ -1100,21 +1131,13 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
               className="flex-1 text-xs font-bold gradient-bg text-white"
               onClick={() => {
                 const newGuides = guides.map(g => {
-                  if (g.id === activeGuideId) {
-                    const newExams = g.exams.map(ex => {
-                      // Note: We need a better way to target the specific exam if there are duplicates
-                      // For now, if we match the name, we update it.
-                      if (ex.name === selectedExam?.name) {
-                        return { ...ex, expectedDeliveryDate: tempDeadline };
-                      }
-                      return ex;
-                    });
-                    return { ...g, exams: newExams };
-                  }
-                  return g;
+                  if (g.id !== activeGuideId) return g;
+                  const alvo = g.exams.indexOf(selectedExam);
+                  const idx = alvo >= 0 ? alvo : g.exams.findIndex(ex => ex.name === selectedExam?.name);
+                  return { ...g, exams: aplicarColetaPrevisao(g.exams, idx, { coletaAntes, coleta: tempCollectionDate, previsao: tempDeadline, todos: aplicarTodos }) };
                 });
                 setGuides(newGuides);
-                update({ guides: newGuides });
+                update({ guides: newGuides, coletaProgramadaPara: coletaProgramadaDasGuias(newGuides) } as any);
                 setShowDeadlineModal(false);
                 toast.success("Previsão de entrega atualizada");
               }}

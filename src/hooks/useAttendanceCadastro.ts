@@ -261,6 +261,7 @@ export function useAttendanceOrderActions() {
             private_value: data.privateValue, 
             delivery_date: ensureIsoDate(data.deliveryDate) || calculatedDeliveryDate,
             lab_guides: data.guides || data.labGuides || [],
+            coleta_programada_para: (data as any).coletaProgramadaPara || null,
             is_fasting: typeof data.isFasting === 'boolean' ? data.isFasting : null,
             weight: data.weight || null,
             height: data.height || null,
