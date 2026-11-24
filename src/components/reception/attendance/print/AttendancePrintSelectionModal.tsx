@@ -12,6 +12,7 @@ import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoSta
 import { useDocumentTemplates } from '@/hooks/useDocumentTemplates';
 import { DocumentPrintDialog } from '@/components/documents/DocumentPrintDialog';
 import { useNavigate } from 'react-router-dom';
+import { CAMPOS_EXTRA_PADRAO, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra';
 
 interface PrintOption {
   id: string;
@@ -70,7 +71,10 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     { id: 'controle_interno', label: 'Controle Interno', enabled: false, formats: ['A4', 'A5', 'TÉRMICA'], selectedFormat: 'TÉRMICA' },
     { id: 'termo_consentimento', label: 'Termo de Consentimento', enabled: false, formats: ['A4', 'A5'], selectedFormat: 'A4' },
     { id: 'etiquetas', label: 'Etiquetas de Amostra', enabled: false, formats: ['ETIQUETA'], selectedFormat: 'ETIQUETA' },
+    { id: 'etiqueta_extra', label: 'Etiqueta Extra', enabled: false, formats: ['ETIQUETA'], selectedFormat: 'ETIQUETA' },
   ]);
+  const [camposExtra, setCamposExtra] = useState<CamposEtiquetaExtra>(CAMPOS_EXTRA_PADRAO);
+  const isLabel = (id: string) => id === 'etiquetas' || id === 'etiqueta_extra';
 
   const [confirmCollection, setConfirmCollection] = useState(false);
   const [selectedMaterials, setSelectedMaterials] = useState<Set<string>>(new Set());
@@ -122,7 +126,6 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   const pendingMaterials = materials.filter(m => !m.collected);
   const allCollected = materials.length > 0 && materials.every(m => m.collected);
 
-  const labelsSelected = options.find(o => o.id === 'etiquetas')?.enabled;
   // Etiquetas só podem ser impressas com amostra coletada (ou coleta confirmada agora)
   const willCollect = confirmCollection && selectedMaterials.size > 0;
   // O status do pedido é a fonte de verdade: pedidos novos/em espera ainda não
@@ -140,7 +143,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
 
   // Seleção única: apenas um tipo de impressão por vez
   const toggleOption = (id: string) => {
-    if (id === 'etiquetas' && labelsBlocked) {
+    if (isLabel(id) && labelsBlocked) {
       setConfirmCollection(true);
       toast({
         title: 'Coleta pendente',
@@ -188,7 +191,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
 
   // Botão "Imprimir" ao lado da opção marcada
   const handlePrintOption = async (opt: PrintOption) => {
-    if (opt.id === 'etiquetas' && labelsBlocked) {
+    if (isLabel(opt.id) && labelsBlocked) {
       toast({
         title: 'Coleta pendente',
         description: 'Para imprimir etiquetas é necessário confirmar a coleta do material.',
@@ -216,7 +219,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       action: 'print',
       optionId: opt.id,
       options: options.map(o => ({ ...o, enabled: o.id === opt.id })),
-      extras,
+      extras, camposExtra,
       printerSettings,
       watermark,
       emptyFields,
@@ -244,7 +247,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     }
     const enabled = options.filter(o => o.enabled);
     if (!multiSelect && enabled.some(o => o.id === 'termo_consentimento')) {
-      dispatchPrint({ action: 'print', optionId: 'termo_consentimento', options: options.map(o => ({ ...o, enabled: o.id === 'termo_consentimento' })), extras, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
+      dispatchPrint({ action: 'print', optionId: 'termo_consentimento', options: options.map(o => ({ ...o, enabled: o.id === 'termo_consentimento' })), extras, camposExtra, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
       return;
     }
     if (multiSelect && enabled.length > 0) {
@@ -252,7 +255,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
         action: 'print-batch',
         options,
         queue: enabled.map(o => ({ id: o.id, format: o.selectedFormat })),
-        extras,
+        extras, camposExtra,
         printerSettings,
         watermark,
         emptyFields,
@@ -263,7 +266,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       });
       return;
     }
-    onConfirm({ action: 'confirm', options, extras, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
+    onConfirm({ action: 'confirm', options, extras, camposExtra, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
   };
 
   return (
@@ -289,7 +292,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                   key={opt.id}
                   className={cn(
                     "flex flex-col gap-1 py-2",
-                    opt.id === 'etiquetas' && labelsBlocked && "rounded-md border border-red-300 bg-red-50 px-2"
+                    isLabel(opt.id) && labelsBlocked && "rounded-md border border-red-300 bg-red-50 px-2"
                   )}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -298,7 +301,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                         onClick={() => toggleOption(opt.id)}
                         className={cn(
                           "w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-all shrink-0",
-                          opt.id === 'etiquetas' && labelsBlocked
+                          isLabel(opt.id) && labelsBlocked
                             ? (opt.enabled ? "bg-red-500 border-red-500" : "bg-white border-red-300")
                             : opt.enabled ? "bg-[#007AFF] border-[#007AFF]" : "bg-white border-slate-300"
                         )}
@@ -307,7 +310,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                       </div>
                       <span className={cn(
                         "text-[13px] font-medium truncate transition-colors",
-                        opt.id === 'etiquetas' && labelsBlocked ? "text-red-600" : opt.enabled ? "text-slate-900" : "text-slate-400"
+                        isLabel(opt.id) && labelsBlocked ? "text-red-600" : opt.enabled ? "text-slate-900" : "text-slate-400"
                       )}>
                         {opt.label}
                       </span>
@@ -315,10 +318,10 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                         <Button
                           size="sm"
                           onClick={() => handlePrintOption(opt)}
-                          disabled={isSaving || (opt.id === 'etiquetas' && labelsBlocked)}
+                          disabled={isSaving || (isLabel(opt.id) && labelsBlocked)}
                           className={cn(
                             "h-6 px-2.5 text-white text-[10px] font-bold uppercase gap-1 shrink-0",
-                            opt.id === 'etiquetas' && labelsBlocked
+                            isLabel(opt.id) && labelsBlocked
                               ? "bg-red-400 hover:bg-red-400 cursor-not-allowed"
                               : "bg-[#007AFF] hover:bg-blue-700"
                           )}
@@ -349,7 +352,18 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                     )}
                   </div>
 
-                  {opt.id === 'etiquetas' && labelsBlocked && (
+                  {opt.id === 'etiqueta_extra' && opt.enabled && (
+                    <div className="ml-6 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-600">
+                      {([['paciente', 'Nome do paciente'], ['exame', 'Nome do exame'], ['dataColeta', 'Usar data da coleta']] as const).map(([k, rotulo]) => (
+                        <label key={k} className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="checkbox" className="h-3.5 w-3.5 accent-current" checked={camposExtra[k]}
+                            onChange={() => setCamposExtra(c => ({ ...c, [k]: !c[k] }))} />
+                          {rotulo}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                  {isLabel(opt.id) && labelsBlocked && (
                     <div className="flex items-center gap-1.5 ml-6 text-[10px] font-medium text-red-600">
                       <AlertTriangle className="h-3 w-3" />
                       A impressão de etiquetas exige que a amostra esteja coletada.

@@ -8,6 +8,7 @@ import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoSta
 import { servidorImpressaoAtivo, imprimirEtiquetas, TIPOS_DOCUMENTO, DadosEtiqueta } from '@/lib/impressaoLocal'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { generateSampleHash } from '@/utils/orderHash'
+import { dadosEtiquetaExtra, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
 
 
 /** Formata a data de nascimento sem sofrer deslocamento de fuso horario. */
@@ -29,6 +30,8 @@ export interface SampleLabelData {
   tube: string
   workbench: string
   examRefs?: string[]
+  examNames?: string[]
+  collectedAt?: string
 }
 
 interface Props {
@@ -44,6 +47,8 @@ interface Props {
   autoPrint?: boolean
   labName?: string
   onPrinted?: () => void
+  /** Etiqueta extra: campos escolhidos pelo usuário */
+  extra?: CamposEtiquetaExtra
 }
 
 export function SampleLabelsPrintModal({
@@ -59,7 +64,10 @@ export function SampleLabelsPrintModal({
   autoPrint,
   labName,
   onPrinted,
+  extra,
 }: Props) {
+  const ex = (l: SampleLabelData) => extra ? dadosEtiquetaExtra({ patientName, examNames: l.examNames, collectedAt: l.collectedAt }, extra) : null
+
   const [enviando, setEnviando] = useState(false)
   const { config } = useLabelConfig()
   const rotated = Math.abs(config.rotation) === 90
@@ -96,22 +104,22 @@ export function SampleLabelsPrintModal({
       const ativo = await servidorImpressaoAtivo()
       if (ativo && labels.length) {
         // Envia TODAS as etiquetas do pedido em uma única chamada (um trabalho só).
-        const lista: DadosEtiqueta[] = labels.map((l, i) => ({
+        const lista: DadosEtiqueta[] = labels.map((l, i) => { const e = ex(l); return {
           codigoAmostra: l.sampleId,
           codigoAlfanumerico: generateSampleHash(l.sampleId) || undefined,
           painel: l.workbench || undefined,
-          dataHora: new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }),
+          dataHora: e ? e.dataHora : new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }),
           codigoExterno: orderNumber || undefined,
-          paciente: patientName || undefined,
-          nascimento: formatBirthDate(birthDate) || undefined,
+          paciente: (e ? e.paciente : patientName) || undefined,
+          nascimento: (e && !e.paciente ? '' : formatBirthDate(birthDate)) || undefined,
           tipoAmostra: [l.material, l.tube ? `(${String(l.tube).toUpperCase()})` : '']
             .filter(Boolean)
             .join(' ') || undefined,
-          exames: (l.examRefs || []).join(' ') || undefined,
+          exames: (e ? e.exames : (l.examRefs || [])).join(' ') || undefined,
           laboratorio: labName || undefined,
           urgente: !!isUrgent,
           fimPedido: i === labels.length - 1,
-        }))
+        } })
         const r = await imprimirEtiquetas(TIPOS_DOCUMENTO.etiquetaCliente, lista)
         toast.success(r.mensagem || `${r.etiquetas} etiqueta(s) enviada(s) para impressão.`)
         onPrinted?.()
@@ -148,7 +156,7 @@ export function SampleLabelsPrintModal({
           <div>
             <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
               <Printer className="h-5 w-5 text-primary" />
-              Impressão de Etiquetas
+              {extra ? 'Etiqueta Extra' : 'Impressão de Etiquetas'}
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
               Pedido {orderNumber} — {labels.length} etiqueta(s) selecionada(s)
@@ -207,11 +215,12 @@ export function SampleLabelsPrintModal({
                   tube={l.tube}
                   workbench={l.workbench}
                   sampleCode={l.sampleId}
-                  printDate={printDate}
+                  printDate={ex(l)?.dataHora || printDate}
                   isUrgent={isUrgent}
                   labelIndex={l.labelIndex}
                   originSigla={originSigla}
-                  examRefs={l.examRefs}
+                  examRefs={extra ? ex(l)!.exames : l.examRefs}
+                  hidePatient={!!extra && !extra.paciente}
                   labName={labName}
                   config={config}
                 />

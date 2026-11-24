@@ -30,6 +30,8 @@ interface LabelProps {
   examRefs?: string[];
   /** Configuração de tipografia/dimensões da etiqueta */
   config?: LabelConfig;
+  /** Etiqueta extra sem o nome do paciente */
+  hidePatient?: boolean;
 }
 
 export const SampleLabel = ({
@@ -47,6 +49,7 @@ export const SampleLabel = ({
   examRefs = [],
   labName,
   config = defaultLabelConfig,
+  hidePatient,
 }: LabelProps & { labName?: string }) => {
   const sampleId = useMemo(() => {
     if (sampleCode) return sampleCode;
@@ -127,10 +130,10 @@ export const SampleLabel = ({
       </div>
 
       {/* Dados do paciente */}
-      <div className="shrink-0 whitespace-nowrap uppercase" style={f('patientName')}>
+      {!hidePatient && <div className="shrink-0 whitespace-nowrap uppercase" style={f('patientName')}>
         {patientName || 'PACIENTE NÃO INFORMADO'}
         <span className="ml-1 normal-case" style={f('birthDate')}>— DN: {birthDate || '--/--/----'}</span>
-      </div>
+      </div>}
       <div className="shrink-0 whitespace-nowrap uppercase" style={f('material')}>
         {material || '---'}{tube ? ` (${String(tube).toUpperCase()})` : ''}
       </div>

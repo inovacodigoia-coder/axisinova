@@ -11,6 +11,7 @@ import { buildSampleCode } from '@/utils/orderHash'
 import { useCompanySequenceIdState } from '@/hooks/useCompanySequenceId'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { SampleLabelsPrintModal } from './SampleLabelsPrintModal'
+import { dataColetaDoTubo, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
 
 interface Props {
   open: boolean
@@ -21,9 +22,10 @@ interface Props {
   /** Imprime direto todas as amostras coletadas, sem tela de selecao. */
   autoPrint?: boolean
   onPrinted?: () => void
+  extra?: CamposEtiquetaExtra
 }
 
-export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoPrint, onPrinted }: Props) {
+export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoPrint, onPrinted, extra }: Props) {
   const seqState = useCompanySequenceIdState()
   // Código do tubo usa o número da empresa gravado no pedido (nunca muda)
   const congelado = order?.empresaSeq ?? order?.empresa_seq
@@ -157,6 +159,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
         open={printOpen && seqReady && cadastroPronto}
         autoPrint={autoPrint}
         onPrinted={onPrinted}
+        extra={extra}
         onClose={() => { setPrintOpen(false); if (autoPrint) onClose() }}
         orderNumber={order?.orderNumber || ''}
         patientName={order?.patientName || ''}
@@ -170,6 +173,8 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
           ...etiquetaTubo(t),
           workbench: resolv.bancadaDoTubo(t.exams),
           examRefs: refsEtiqueta(t, exams, resolv.codigoDoExame),
+          examNames: t.exams.map((e: any) => e.name),
+          collectedAt: dataColetaDoTubo(t.exams),
         }))}
       />
     </>
