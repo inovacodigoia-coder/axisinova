@@ -28,7 +28,7 @@ it('envia o código da prévia de cada tubo, não o número compartilhado do ped
   expect(enviados.etiquetas.map((e: { codigoExterno: string }) => e.codigoExterno)).toEqual(['296-00', '296-00', '296-00'])
 })
 
-it('imprime o total de etiquetas pedido, repetindo os tubos', async () => {
+it('Etiqueta Extra sai só do paciente, sem bancada, no total pedido', async () => {
   const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, etiquetas: 4 }) })
   vi.stubGlobal('fetch', fetchMock)
   render(<SampleLabelsPrintModal
@@ -43,7 +43,8 @@ it('imprime o total de etiquetas pedido, repetindo os tubos', async () => {
   await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
   const enviados = JSON.parse(fetchMock.mock.calls[1][1].body)
   expect(enviados.etiquetas.map((e: { codigoAmostra: string }) => e.codigoAmostra))
-    .toEqual(['296-00-1-2', '296-00-2-2', '296-00-1-2', '296-00-2-2'])
+    .toEqual(['296-00-1-2', '296-00-1-2', '296-00-1-2', '296-00-1-2'])
+  expect(enviados.etiquetas.every((e: { painel?: string; tipoAmostra?: string }) => !e.painel && !e.tipoAmostra)).toBe(true)
   expect(enviados.etiquetas.filter((e: { fimPedido: boolean }) => e.fimPedido)).toHaveLength(1)
 })
 

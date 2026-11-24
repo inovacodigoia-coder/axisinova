@@ -31,12 +31,10 @@ it('Etiqueta Extra mostra o total de etiquetas que vai imprimir', () => {
   abrir()
   fireEvent.click(screen.getByText('Etiqueta Extra'))
   const qtd = screen.getByRole('spinbutton', { name: 'Quantidade de etiquetas' })
-  // Sem mexer: uma etiqueta por tubo (2 tubos coletados).
-  expect(qtd).toHaveValue(2)
-  expect(screen.getByText(/Serão impressas 2 etiqueta\(s\) — 2 tubo\(s\) repetidos até 2/)).toBeInTheDocument()
+  // Sem mexer: uma etiqueta só do paciente.
+  expect(qtd).toHaveValue(1)
   fireEvent.click(screen.getByRole('button', { name: 'Aumentar quantidade de etiquetas' }))
-  expect(qtd).toHaveValue(3)
-  expect(screen.getByText(/Serão impressas 3 etiqueta\(s\) — 2 tubo\(s\) repetidos até 3/)).toBeInTheDocument()
+  expect(qtd).toHaveValue(2)
 })
 
 it('Etiquetas de Amostra continuam sem campo de quantidade', () => {
@@ -51,7 +49,7 @@ it('Confirmar imprime a Etiqueta Extra também nos detalhes do atendimento', asy
   fireEvent.click(screen.getByText('Etiqueta Extra'))
   fireEvent.click(screen.getByRole('button', { name: /^CONFIRMAR$/i }))
   await waitFor(() => expect(onConfirm).toHaveBeenCalled())
-  expect(onConfirm.mock.calls[0][0]).toMatchObject({ action: 'print', optionId: 'etiqueta_extra', qtdEtiquetas: 2 })
+  expect(onConfirm.mock.calls[0][0]).toMatchObject({ action: 'print', optionId: 'etiqueta_extra', qtdEtiquetas: 1 })
 })
 
 it('pós-cadastro mantém as duas etiquetas selecionadas na fila, mesmo com totais iguais', async () => {

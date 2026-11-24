@@ -11,7 +11,7 @@ import { buildSampleCode } from '@/utils/orderHash'
 import { useCompanySequenceIdState } from '@/hooks/useCompanySequenceId'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { SampleLabelsPrintModal } from './SampleLabelsPrintModal'
-import { dataColetaDoTubo, etiquetasParaImprimir, qtdEtiquetasValida, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
+import { dataColetaDoTubo, qtdEtiquetasValida, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
 
 interface Props {
   open: boolean
@@ -100,7 +100,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
 
   const chosen = tubes.filter(t => selected.has(t.code))
   const quantidade = extra && total != null ? qtdEtiquetasValida(total) : undefined
-  const totalEtiquetas = quantidade == null ? chosen.length : etiquetasParaImprimir(chosen, quantidade).length
+  const totalEtiquetas = quantidade == null ? chosen.length : (chosen.length ? quantidade : 0)
 
   if (!open) return null
 

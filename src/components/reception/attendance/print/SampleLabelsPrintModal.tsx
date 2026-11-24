@@ -8,7 +8,7 @@ import { ServidorImpressaoStatus } from '@/components/print/ServidorImpressaoSta
 import { servidorImpressaoAtivo, imprimirEtiquetas, TIPOS_DOCUMENTO, DadosEtiqueta } from '@/lib/impressaoLocal'
 import { useLabelConfig } from '@/hooks/useLabelConfig'
 import { generateSampleHash } from '@/utils/orderHash'
-import { dadosEtiquetaExtra, etiquetasParaImprimir, qtdEtiquetasValida, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
+import { dadosEtiquetaExtra, etiquetaExtraDoPaciente, qtdEtiquetasValida, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra'
 
 
 /** Formata a data de nascimento sem sofrer deslocamento de fuso horario. */
@@ -70,10 +70,10 @@ export function SampleLabelsPrintModal({
   total,
 }: Props) {
   // Sem quantidade pedida: uma etiqueta por tubo, como sempre foi.
-  const quantidade = extra && total != null ? qtdEtiquetasValida(total) : labels.length
+  const quantidade = extra ? qtdEtiquetasValida(total ?? 1) : labels.length
   // Total pedido: os tubos se repetem na ordem até chegar na quantidade.
   // A prévia e o envio à impressora usam exatamente a mesma lista.
-  const labelsFinais = useMemo(() => extra && total != null ? etiquetasParaImprimir(labels, quantidade) : labels, [labels, quantidade, extra, total])
+  const labelsFinais = useMemo(() => extra ? etiquetaExtraDoPaciente(labels, total ?? 1) : labels, [labels, quantidade, extra, total])
   const ex = (l: SampleLabelData) => extra ? dadosEtiquetaExtra({ patientName, examNames: l.examNames, collectedAt: l.collectedAt }, extra) : null
 
   const [enviando, setEnviando] = useState(false)

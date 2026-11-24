@@ -42,5 +42,6 @@ it('envia etiquetas normais e extras consecutivamente mesmo quando têm a mesma 
   expect(jobs).toHaveLength(2)
   expect(jobs.map(job => job.etiquetas.length)).toEqual([2, 2])
   expect(jobs[0].etiquetas.map((e: any) => e.painel)).toEqual(['TESTES RÁPIDOS', 'HEMATOLOGIA'])
-  expect(jobs[1].etiquetas.map((e: any) => e.exames)).toEqual(['HIV', 'Hemograma'])
+  expect(jobs[1].etiquetas.map((e: any) => e.exames)).toEqual(['HIV Hemograma', 'HIV Hemograma'])
+  expect(jobs[1].etiquetas.map((e: any) => e.painel)).toEqual([undefined, undefined])
 })

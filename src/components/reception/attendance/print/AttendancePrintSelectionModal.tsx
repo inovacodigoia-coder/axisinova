@@ -187,7 +187,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
     ));
     // Ao ligar a Etiqueta Extra sem o usuário ter ajustado, começa com uma por tubo.
     if (id === 'etiqueta_extra' && !options.find(o => o.id === id)?.enabled && !qtdAjustada.current) {
-      setQtdEtiquetas(Math.max(1, tubosParaEtiquetar));
+      setQtdEtiquetas(1);
     }
   };
 
@@ -444,7 +444,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                       <span className="w-full text-[11px] font-bold text-slate-700">
                         Serão impressas {totalEtiquetasPrevisto} etiqueta(s)
                         {tubosParaEtiquetar > 0
-                          ? ` — ${tubosParaEtiquetar} tubo(s) repetidos até ${qtdEtiquetas}`
+                          ? ' — só com os dados do paciente, sem repetir as etiquetas dos tubos'
                           : ' — nenhum tubo coletado'}
                       </span>
                     </div>
