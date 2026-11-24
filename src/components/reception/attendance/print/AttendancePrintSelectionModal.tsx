@@ -13,6 +13,7 @@ import { useDocumentTemplates } from '@/hooks/useDocumentTemplates';
 import { DocumentPrintDialog } from '@/components/documents/DocumentPrintDialog';
 import { useNavigate } from 'react-router-dom';
 import { CAMPOS_EXTRA_PADRAO, QTD_ETIQUETAS_MAX, QTD_ETIQUETAS_MIN, qtdEtiquetasValida, type CamposEtiquetaExtra } from '@/lib/etiquetaExtra';
+import { useFormatoImpressao } from '@/hooks/useFormatoImpressao';
 
 interface PrintOption {
   id: string;
@@ -44,6 +45,8 @@ interface Props {
 export const tubeTypeForMaterial = (examOrMaterial: any): string => tuboDoExame(examOrMaterial);
 
 export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order, selectedExams, selectedTubes, multiSelect }: Props) {
+  const { formatos, carregando: formatosCarregando, escopo: formatoEscopo, guardar: guardarFormato } = useFormatoImpressao(open);
+  const formatosAlterados = React.useRef(new Set<string>());
   const { templates, loading: templatesLoading, error: templatesError } = useDocumentTemplates();
   const navigate = useNavigate();
   const [pendingPrint, setPendingPrint] = useState<any>(null);
@@ -86,13 +89,24 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   // Sempre iniciar sem nenhuma opção marcada
   React.useEffect(() => {
     if (open) {
+      formatosAlterados.current.clear();
       setOptions(prev => prev.map(o => ({ ...o, enabled: false })));
       setConfirmCollection(false);
       setSelectedMaterials(new Set());
       setQtdEtiquetas(1);
       qtdAjustada.current = false;
     }
-  }, [open]);
+  }, [open, formatoEscopo]);
+
+  React.useEffect(() => {
+    if (!open) return;
+    setOptions(prev => prev.map(opt => {
+      if (formatosAlterados.current.has(opt.id)) return opt;
+      const salvo = opt.formats.find(fmt => fmt === formatos[opt.id]);
+      const padrao = opt.formats.includes('TÉRMICA') ? 'TÉRMICA' : opt.formats[0];
+      return { ...opt, selectedFormat: salvo || padrao };
+    }));
+  }, [open, formatos, formatoEscopo]);
 
   const [watermark, setWatermark] = useState(false);
   const [emptyFields, setEmptyFields] = useState(false);
@@ -178,7 +192,12 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
   };
 
   const setFormat = (id: string, format: any) => {
+    formatosAlterados.current.add(id);
     setOptions(prev => prev.map(opt => opt.id === id ? { ...opt, selectedFormat: format } : opt));
+    if (format === 'ETIQUETA') return;
+    void guardarFormato(id, format).catch(() => {
+      toast({ title: 'Formato não salvo', description: 'A escolha vale para esta impressão, mas não foi possível guardar para a próxima.', variant: 'destructive' });
+    });
   };
 
   const toggleMaterial = (type: string) => {
@@ -343,7 +362,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
                         <Button
                           size="sm"
                           onClick={() => handlePrintOption(opt)}
-                          disabled={isSaving || (isLabel(opt.id) && labelsBlocked)}
+                          disabled={isSaving || formatosCarregando || (isLabel(opt.id) && labelsBlocked)}
                           className={cn(
                             "h-6 px-2.5 text-white text-[10px] font-bold uppercase gap-1 shrink-0",
                             isLabel(opt.id) && labelsBlocked
@@ -531,7 +550,7 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
             <Button
               size="sm"
               onClick={handleConfirm}
-              disabled={isSaving}
+              disabled={isSaving || formatosCarregando}
               className="px-6 font-bold bg-[#007AFF] hover:bg-blue-700 text-white shadow uppercase text-xs disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'CONFIRMAR'}

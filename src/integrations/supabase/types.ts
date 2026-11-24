@@ -11155,6 +11155,42 @@ export type Database = {
         }
         Relationships: []
       }
+      usuario_formato_impressao: {
+        Row: {
+          company_id: string
+          documento: string
+          formato: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          documento: string
+          formato: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          documento?: string
+          formato?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuario_formato_impressao_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuario_formato_impressao_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_auditoria: {
         Row: {
           acao: string

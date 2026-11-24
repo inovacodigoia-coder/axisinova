@@ -312,3 +312,8 @@
 - [x] Separar exames da bancada Testes Rápidos dos demais nas etiquetas de novos cadastros, com código de tubo próprio.
 - [x] Testes automáticos do envio e da separação.
 - [ ] Impressão física: depende do servidor local aberto no computador do usuário.
+
+# Formato de impressão lembrado
+- [x] Salvar formato por usuário, empresa e documento; reaplicar no modal do cadastro e dos detalhes.
+- [x] Testar persistência de A4 e isolamento da preferência; não salvar seleção de documentos nem coleta.
+- [ ] Conferência logada na tela: não há sessão autorizada do usuário nesta conversa.
