@@ -5,7 +5,8 @@ import { Printer, X, Tag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/context/AuthContext'
 import { useMateriaisTubos, etiquetasDosExames, examesDoTubo, etiquetaTubo, refsEtiqueta, resolvedoresEtiqueta } from '@/lib/tubos'
-import { useRegisters } from '@/context/RegistersContext'
+import { toast } from 'sonner'
+import { carregarCadastroEtiqueta, type CadastroEtiqueta } from '@/lib/cadastroEtiqueta'
 import { buildSampleCode } from '@/utils/orderHash'
 import { useCompanySequenceIdState } from '@/hooks/useCompanySequenceId'
 import { useLabSettings } from '@/hooks/useLabSettings'
@@ -31,8 +32,25 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
   const { settings } = useLabSettings()
   const { user } = useAuth()
   const cad = useMateriaisTubos(user?.companyId)
-  const { exams: catalogExams, workbenches } = useRegisters()
-  const resolv = useMemo(() => resolvedoresEtiqueta(catalogExams, workbenches), [catalogExams, workbenches])
+  // Cadastro lido com await antes de montar a etiqueta (nunca estado que chega depois)
+  const [cadastro, setCadastro] = useState<CadastroEtiqueta | null>(null)
+  const [cadastroErro, setCadastroErro] = useState(false)
+  useEffect(() => {
+    if (!open) return
+    let vivo = true
+    setCadastro(null); setCadastroErro(false)
+    carregarCadastroEtiqueta(user?.companyId || '')
+      .then(c => { if (vivo) setCadastro(c) })
+      .catch(() => {
+        if (!vivo) return
+        setCadastroErro(true)
+        toast.error('Não foi possível carregar o cadastro de exames. A etiqueta não foi enviada; tente imprimir de novo.')
+      })
+    return () => { vivo = false }
+  }, [open, user?.companyId])
+  useEffect(() => { if (cadastroErro) onClose() }, [cadastroErro])
+  const cadastroPronto = !!cadastro
+  const resolv = useMemo(() => resolvedoresEtiqueta(cadastro?.exames || [], cadastro?.bancadas || []), [cadastro])
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [printOpen, setPrintOpen] = useState(false)
 
@@ -63,10 +81,10 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
   // Se nenhuma amostra estiver coletada, encerra para nao travar o fluxo numa tela vazia.
   useEffect(() => {
     // Espera o ID da empresa: etiqueta sem ele gera código diferente do enviado ao aparelho
-    if (!open || !autoPrint || printOpen || !seqReady) return
+    if (!open || !autoPrint || printOpen || !seqReady || !cadastroPronto) return
     if (tubes.some(t => t.collected)) setPrintOpen(true)
     else onClose()
-  }, [open, autoPrint, printOpen, tubes, onClose, seqReady])
+  }, [open, autoPrint, printOpen, tubes, onClose, seqReady, cadastroPronto])
 
   const toggle = (code: string) =>
     setSelected(prev => {
@@ -82,7 +100,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
 
   return (
     <>
-      <Dialog open={open && !printOpen && !autoPrint && seqReady} onOpenChange={(o) => !o && onClose()}>
+      <Dialog open={open && !printOpen && !autoPrint && seqReady && cadastroPronto} onOpenChange={(o) => !o && onClose()}>
         <DialogContent className="max-w-[560px] p-0 overflow-hidden [&>button]:hidden">
           <div className="flex items-center justify-between border-b border-border px-5 py-3">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -136,7 +154,7 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
       </Dialog>
 
       <SampleLabelsPrintModal
-        open={printOpen && seqReady}
+        open={printOpen && seqReady && cadastroPronto}
         autoPrint={autoPrint}
         onPrinted={onPrinted}
         onClose={() => { setPrintOpen(false); if (autoPrint) onClose() }}
