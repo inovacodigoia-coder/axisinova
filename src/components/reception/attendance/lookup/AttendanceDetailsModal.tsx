@@ -3,6 +3,7 @@ import { attendanceExamStatus } from '@/utils/attendanceExamStatus'
 import { formatCPF, formatPhone, formatAge, formatGender, formatAddress } from "@/utils/formatters"
 import { fmtDiaMes } from '@/lib/apoioAtendimento'
 import { useState, useMemo, useEffect } from 'react'
+import { toast as avisar } from 'sonner'
 import { CorrigirHorarioColetaDialog } from '@/components/lab/triagem/CorrigirHorarioColetaDialog'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { X, Printer, Pencil, Trash2, Plus, ArrowLeft, MoreVertical, CreditCard, Droplets, ShieldCheck, DollarSign, Calendar, Clock, MapPin, User, FileText, ChevronDown, History, BarChart3, Database, RefreshCw, Info, Smartphone, Calculator, Loader2, Eye, AlertTriangle } from 'lucide-react'
@@ -222,6 +223,13 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const resolv = useMemo(() => resolvedoresEtiqueta(catalogExams, workbenches), [catalogExams, workbenches]);
   const examRefOf = resolv.codigoDoExame;
   const findCatalog = (e: any) => catalogoDoExame(e, catalogExams);
+  // Cadastro ainda não chegou: não envia etiqueta com "GERAL" nem nome cortado
+  useEffect(() => {
+    if (labelsPrintOpen && !catalogExams.length) {
+      setLabelsPrintOpen(false)
+      avisar.error('Cadastro de exames ainda não carregou. A etiqueta não foi enviada; tente de novo em instantes.')
+    }
+  }, [labelsPrintOpen, catalogExams.length])
   const tubeWorkbench = (tube: any) => resolv.bancadaDoTubo(examsForTube(tube));
 
   // ---- Coleta por amostra ----
@@ -1438,7 +1446,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       />
 
       <SampleLabelsPrintModal
-        open={labelsPrintOpen}
+        open={labelsPrintOpen && catalogExams.length > 0}
         onClose={() => setLabelsPrintOpen(false)}
         orderNumber={order.orderNumber}
         patientName={currentPatient?.fullName || order.patientName}
