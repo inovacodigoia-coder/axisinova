@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 import { AttendancePrintSelectionModal } from './AttendancePrintSelectionModal'
 
@@ -40,4 +40,25 @@ it('Etiquetas de Amostra continuam sem campo de quantidade', () => {
   abrir()
   fireEvent.click(screen.getByText('Etiquetas de Amostra'))
   expect(screen.queryByRole('spinbutton', { name: 'Quantidade de etiquetas' })).not.toBeInTheDocument()
+})
+
+it('Confirmar imprime a Etiqueta Extra também nos detalhes do atendimento', async () => {
+  const onConfirm = vi.fn()
+  render(<AttendancePrintSelectionModal open onClose={() => {}} onConfirm={onConfirm} order={order} />)
+  fireEvent.click(screen.getByText('Etiqueta Extra'))
+  fireEvent.click(screen.getByRole('button', { name: /^CONFIRMAR$/i }))
+  await waitFor(() => expect(onConfirm).toHaveBeenCalled())
+  expect(onConfirm.mock.calls[0][0]).toMatchObject({ action: 'print', optionId: 'etiqueta_extra', qtdEtiquetas: 2 })
+})
+
+it('pós-cadastro mantém as duas etiquetas selecionadas na fila, mesmo com totais iguais', async () => {
+  const onConfirm = vi.fn()
+  render(<AttendancePrintSelectionModal open multiSelect onClose={() => {}} onConfirm={onConfirm} order={order} />)
+  fireEvent.click(screen.getByText('Etiquetas de Amostra'))
+  fireEvent.click(screen.getByText('Etiqueta Extra'))
+  fireEvent.click(screen.getByRole('button', { name: /^CONFIRMAR$/i }))
+  await waitFor(() => expect(onConfirm).toHaveBeenCalled())
+  expect(onConfirm.mock.calls[0][0]).toMatchObject({ action: 'print-batch', queue: [
+    { id: 'etiquetas', format: 'ETIQUETA' }, { id: 'etiqueta_extra', format: 'ETIQUETA' },
+  ] })
 })

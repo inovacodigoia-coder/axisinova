@@ -222,7 +222,7 @@ export function AttendanceCadastroModal({
   // Imprime, em sequência, todos os documentos marcados no modal de impressão
   const [labelsExtra, setLabelsExtra] = useState<CamposEtiquetaExtra | undefined>()
   const camposExtraRef = useRef<CamposEtiquetaExtra | null>(null)
-  const [labelsTotal, setLabelsTotal] = useState(1)
+  const [labelsTotal, setLabelsTotal] = useState<number | undefined>()
   const qtdEtiquetasRef = useRef(1)
   const runPrintQueue = (queue: { id: string; format: string }[]) => {
     if (!queue.length) {
@@ -239,7 +239,7 @@ export function AttendanceCadastroModal({
     if (next.id === 'etiquetas' || next.id === 'etiqueta_extra') {
       setShowPrint(false)
       setLabelsExtra(next.id === 'etiqueta_extra' ? (camposExtraRef.current || CAMPOS_EXTRA_PADRAO) : undefined)
-      setLabelsTotal(next.id === 'etiqueta_extra' ? qtdEtiquetasRef.current : 1)
+      setLabelsTotal(next.id === 'etiqueta_extra' ? qtdEtiquetasRef.current : undefined)
       setShowLabelsSelect(true)
       return
     }
@@ -885,6 +885,7 @@ export function AttendanceCadastroModal({
       )}
       {showLabelsSelect && createdOrder && (
         <SampleLabelsSelectModal
+          key={printDocumentType}
           open
           order={createdOrder}
           autoPrint

@@ -264,8 +264,8 @@ export function AttendancePrintSelectionModal({ open, onClose, onConfirm, order,
       setIsSaving(false);
     }
     const enabled = options.filter(o => o.enabled);
-    if (!multiSelect && enabled.some(o => o.id === 'termo_consentimento')) {
-      dispatchPrint({ action: 'print', optionId: 'termo_consentimento', options: options.map(o => ({ ...o, enabled: o.id === 'termo_consentimento' })), extras, camposExtra, qtdEtiquetas, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
+    if (!multiSelect && enabled.some(o => o.id === 'termo_consentimento' || isLabel(o.id))) {
+      dispatchPrint({ action: 'print', optionId: enabled[0].id, options, extras, camposExtra, qtdEtiquetas, printerSettings, collectedMaterials: collectedTypes, confirmCollection: collectedTypes.length > 0 });
       return;
     }
     if (multiSelect && enabled.length > 0) {

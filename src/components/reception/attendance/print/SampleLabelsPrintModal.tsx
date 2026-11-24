@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Printer, X, Loader2 } from 'lucide-react'
@@ -70,13 +70,14 @@ export function SampleLabelsPrintModal({
   total,
 }: Props) {
   // Sem quantidade pedida: uma etiqueta por tubo, como sempre foi.
-  const quantidade = total == null ? Math.max(labels.length, 1) : qtdEtiquetasValida(total)
+  const quantidade = extra && total != null ? qtdEtiquetasValida(total) : labels.length
   // Total pedido: os tubos se repetem na ordem até chegar na quantidade.
   // A prévia e o envio à impressora usam exatamente a mesma lista.
-  const labelsFinais = useMemo(() => etiquetasParaImprimir(labels, quantidade), [labels, quantidade])
+  const labelsFinais = useMemo(() => extra && total != null ? etiquetasParaImprimir(labels, quantidade) : labels, [labels, quantidade, extra, total])
   const ex = (l: SampleLabelData) => extra ? dadosEtiquetaExtra({ patientName, examNames: l.examNames, collectedAt: l.collectedAt }, extra) : null
 
   const [enviando, setEnviando] = useState(false)
+  const envioAutomatico = useRef(false)
   const { config } = useLabelConfig()
   const rotated = Math.abs(config.rotation) === 90
   const sheetW = rotated ? config.heightMm : config.widthMm
@@ -134,20 +135,22 @@ export function SampleLabelsPrintModal({
         return
       }
       if (!ativo) {
-        toast.warning('Servidor de Impressão AisAxius não está aberto. Usando a impressão do navegador.')
+        toast.warning(autoPrint
+          ? 'Servidor local não detectado. Abra o AisAxius e clique em Imprimir; a etiqueta ainda não foi enviada.'
+          : 'Servidor de Impressão AisAxius não está aberto. Usando a impressão do navegador.')
       }
-      printNavegador()
+      if (!autoPrint) printNavegador()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Falha ao imprimir pelo servidor local. Usando impressão do navegador.')
-      printNavegador()
+      toast.error(err instanceof Error ? err.message : 'Não foi possível confirmar o envio da etiqueta. Confira a impressora antes de tentar novamente.')
     } finally {
       setEnviando(false)
     }
   }
 
   useEffect(() => {
-    if (open && autoPrint && labelsFinais.length) {
-      const t = setTimeout(() => { void handlePrint() }, 400)
+    if (!open) envioAutomatico.current = false
+    if (open && autoPrint && labelsFinais.length && !envioAutomatico.current) {
+      const t = setTimeout(() => { envioAutomatico.current = true; void handlePrint() }, 400)
       return () => clearTimeout(t)
     }
   }, [open, autoPrint, labelsFinais.length])
@@ -228,7 +231,7 @@ export function SampleLabelsPrintModal({
                   isUrgent={isUrgent}
                   labelIndex={l.labelIndex}
                   originSigla={originSigla}
-                  examRefs={extra ? ex(l)!.exames : l.examRefs}
+                  examRefs={extra ? ex(l)?.exames : l.examRefs}
                   hidePatient={!!extra && !extra.paciente}
                   labName={labName}
                   config={config}

@@ -33,6 +33,7 @@ it('imprime o total de etiquetas pedido, repetindo os tubos', async () => {
   vi.stubGlobal('fetch', fetchMock)
   render(<SampleLabelsPrintModal
     open onClose={() => {}} orderNumber="296-00" patientName="PACIENTE TESTE" total={4}
+    extra={{ paciente: true, exame: true, dataColeta: true }}
     labels={[
       { sampleId: '296-00-1-2', labelIndex: 1, material: 'GEL', tube: 'GEL', workbench: 'BIOQUÍMICA' },
       { sampleId: '296-00-2-2', labelIndex: 2, material: 'EDTA', tube: 'EDTA', workbench: 'HEMATOLOGIA' },
@@ -44,6 +45,33 @@ it('imprime o total de etiquetas pedido, repetindo os tubos', async () => {
   expect(enviados.etiquetas.map((e: { codigoAmostra: string }) => e.codigoAmostra))
     .toEqual(['296-00-1-2', '296-00-2-2', '296-00-1-2', '296-00-2-2'])
   expect(enviados.etiquetas.filter((e: { fimPedido: boolean }) => e.fimPedido)).toHaveLength(1)
+})
+
+it('quantidade da Etiqueta Extra nunca limita as etiquetas normais', async () => {
+  const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ok: true, etiquetas: 2 }) })
+  vi.stubGlobal('fetch', fetchMock)
+  render(<SampleLabelsPrintModal open onClose={() => {}} orderNumber="296-00" patientName="PACIENTE TESTE" total={1}
+    labels={[
+      { sampleId: '296-00-1-2', labelIndex: 1, material: 'GEL', tube: 'GEL', workbench: 'BIOQUÍMICA' },
+      { sampleId: '296-00-2-2', labelIndex: 2, material: 'EDTA', tube: 'EDTA', workbench: 'HEMATOLOGIA' },
+    ]} />)
+  fireEvent.click(screen.getByRole('button', { name: /^Imprimir$/ }))
+  await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+  expect(JSON.parse(fetchMock.mock.calls[1][1].body).etiquetas).toHaveLength(2)
+})
+
+it('automático não abre o navegador nem confirma impressão com servidor desconectado', async () => {
+  const fetchMock = vi.fn().mockRejectedValue(new Error('desconectado'))
+  vi.stubGlobal('fetch', fetchMock)
+  const print = vi.spyOn(window, 'print').mockImplementation(() => {})
+  const onPrinted = vi.fn()
+  render(<SampleLabelsPrintModal open autoPrint onPrinted={onPrinted} onClose={() => {}}
+    orderNumber="296-00" patientName="PACIENTE TESTE"
+    labels={[{ sampleId: '296-00-1-2', labelIndex: 1, material: 'GEL', tube: 'GEL', workbench: 'BIOQUÍMICA' }]} />)
+  await waitFor(() => expect(fetchMock).toHaveBeenCalled())
+  expect(onPrinted).not.toHaveBeenCalled()
+  expect(print).not.toHaveBeenCalled()
+  print.mockRestore()
 })
 
 it('sem quantidade pedida, sai uma etiqueta por tubo', async () => {

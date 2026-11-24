@@ -97,7 +97,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const [selectedTubes, setSelectedTubes] = useState<Set<string>>(new Set())
   const [labelsPrintOpen, setLabelsPrintOpen] = useState(false)
   const [labelsExtra, setLabelsExtra] = useState<CamposEtiquetaExtra | undefined>()
-  const [labelsTotal, setLabelsTotal] = useState(1)
+  const [labelsTotal, setLabelsTotal] = useState<number | undefined>()
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [mudarOrigemOpen, setMudarOrigemOpen] = useState(false)
@@ -236,7 +236,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
   const tubeWorkbench = (tube: any) => resolv.bancadaDoTubo(examsForTube(tube));
 
   // ---- Coleta por amostra ----
-  const matchesTube = (examOrMaterial: any, tube: any) => tubeTypeForMaterial(examOrMaterial) === tube.type;
+  const matchesTube = (examOrMaterial: any, tube: any) => tubeTypeForMaterial(examOrMaterial) === (tube.baseType || tube.type);
 
   const tubeIsCollected = (tube: any) => {
     const exams = examsForTube(tube);
@@ -1338,7 +1338,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
           const extraSel = result.options.find((o: any) => o.id === 'etiqueta_extra' && o.enabled);
           if (extraSel || result.options.find((o: any) => o.id === 'etiquetas' && o.enabled)) {
             setLabelsExtra(extraSel ? (result.camposExtra || CAMPOS_EXTRA_PADRAO) : undefined);
-            setLabelsTotal(extraSel ? qtdEtiquetasValida(result.qtdEtiquetas ?? 1) : 1);
+            setLabelsTotal(extraSel ? qtdEtiquetasValida(result.qtdEtiquetas ?? 1) : undefined);
             if (selectedTubes.size === 0) {
               setSelectedTubes(new Set(patientTubes.map((_, idx) => sampleCodeFor(idx + 1))));
             }

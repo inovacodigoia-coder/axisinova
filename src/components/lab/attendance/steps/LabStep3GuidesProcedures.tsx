@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useCadastroRapidoExames } from '@/hooks/useCadastroRapidoExames';
 import { moverDestaque, abreBuscaPeloTeclado, exameCombinaBusca } from '@/lib/cadastroRapido';
-import { materialPorNome } from '@/lib/tubos'
+import { materialPorNome, bancadaEtiquetaSeparada } from '@/lib/tubos'
 import { indiceExameNaGuia } from '@/lib/guiaExames'
 import { aplicarColetaPrevisao, coletaProgramadaDasGuias, formatarPrevisao, paraInputLocal } from '@/lib/previsaoColeta'
 import { Card } from '@/components/ui/card';
@@ -395,6 +395,10 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
 
     const examData = {
       ...selectedExam,
+      // Não reclassifica exames já gravados ao editar um atendimento antigo.
+      etiquetaSeparada: editingExamIndex !== null
+        ? activeGuide?.exams[editingExamIndex]?.etiquetaSeparada
+        : bancadaEtiquetaSeparada(destino?.bancada_nome),
       ...(destino?.bancada_id ? {
         bancadaId: destino.bancada_id, bancadaNome: destino.bancada_nome, bancadaTipo: destino.tipo,
         apoioId: destino.apoio_id ?? null, apoioNome: destino.apoio_nome ?? null, laudoId: destino.laudo_id ?? null,

@@ -306,3 +306,9 @@
 - [x] Campo "Quantidade de etiquetas" (total de 1 a 50) só na Etiqueta Extra, com total previsto no modal; sem mexer, uma por tubo.
 - [x] O total vale para prévia e envio à impressora, repetindo os tubos; Etiquetas de Amostra continuam uma por tubo.
 - [ ] Conferir na tela com login real.
+
+# Etiqueta Extra pós-cadastro e testes rápidos
+- [x] Corrigir envio consecutivo das etiquetas normais e extras, preservando a quantidade normal por tubo.
+- [x] Separar exames da bancada Testes Rápidos dos demais nas etiquetas de novos cadastros, com código de tubo próprio.
+- [x] Testes automáticos do envio e da separação.
+- [ ] Impressão física: depende do servidor local aberto no computador do usuário.

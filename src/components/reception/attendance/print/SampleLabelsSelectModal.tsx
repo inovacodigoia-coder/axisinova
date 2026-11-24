@@ -99,8 +99,8 @@ export function SampleLabelsSelectModal({ open, onClose, order, birthDate, autoP
     })
 
   const chosen = tubes.filter(t => selected.has(t.code))
-  const quantidade = total == null ? Math.max(chosen.length, 1) : qtdEtiquetasValida(total)
-  const totalEtiquetas = etiquetasParaImprimir(chosen, quantidade).length
+  const quantidade = extra && total != null ? qtdEtiquetasValida(total) : undefined
+  const totalEtiquetas = quantidade == null ? chosen.length : etiquetasParaImprimir(chosen, quantidade).length
 
   if (!open) return null
 

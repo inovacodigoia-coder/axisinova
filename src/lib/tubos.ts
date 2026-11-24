@@ -12,10 +12,16 @@ import { coletasDoExame, chaveExame, refExameEtiqueta } from '@/lib/coletasEtiqu
 export interface Recipiente { id: string; nome: string; sigla: string; cor_tampa: string | null; cor_hex: string | null; aditivo: string | null; volume_ml: number | null; observacao: string | null; ativo: boolean; ordem: number }
 export interface Material { id: string; nome: string; sigla: string | null; recipiente_id: string | null; descricao: string | null; legado: boolean; ativo: boolean; ordem: number; condicao_transporte_id?: string | null; estab_ambiente_h?: number | null; estab_refrigerado_h?: number | null; estab_congelado_h?: number | null }
 export interface Tubo { type: string; label: string; sigla: string; color: string; hex: string; volume: string; indefinido?: boolean
+  /** Partição de impressão congelada no exame; o tubo de coleta permanece o original. */
+  separado?: string; baseType?: string
   /** Etiqueta própria de uma coleta seguinte (ex.: TOTG 120 min). */
   extra?: { examKey: string; coleta: string; ordem: number } }
 
 export const normMat = (s: unknown) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim()
+
+/** Apenas a bancada define testes rápidos, nunca o nome ou a sigla do exame. */
+export const bancadaEtiquetaSeparada = (nome: unknown): string | undefined =>
+  /^(?:testes?|exames?) rapidos?$/.test(normMat(nome)) ? 'testes_rapidos' : undefined
 
 type Estado = { companyId: string | null; materiais: Material[]; recipientes: Recipiente[]; carregado: boolean }
 let estado: Estado = { companyId: null, materiais: [], recipientes: [], carregado: false }
@@ -146,13 +152,27 @@ export function etiquetasDosExames(exams: any[]): Tubo[] {
       extras.push({ ...base, type: `extra:${examKey}:${i + 2}`, extra: { examKey, coleta: c.nome, ordem: i + 2 } })
     })
   }
-  return [...tubosDosExames(exams), ...extras]
+  const separados: Tubo[] = []
+  const comuns = tubosDosExames(exams).map(base => {
+    const lista = exams.filter(e => tuboDoExame(e) === base.type)
+    const rapidos = lista.filter(e => e.etiquetaSeparada === 'testes_rapidos')
+    if (!rapidos.length) return base
+    // Se só houver rápidos, mantém o índice original do tubo. Em tubos mistos,
+    // acrescenta a etiqueta rápida depois de todas as etiquetas já existentes.
+    if (rapidos.length === lista.length) return { ...base, separado: 'testes_rapidos' }
+    separados.push({ ...base, type: `separado:testes_rapidos:${base.type}`, baseType: base.type, separado: 'testes_rapidos' })
+    return base
+  })
+  return [...comuns, ...extras, ...separados]
 }
 
 /** Exames de uma etiqueta (tubo comum ou etiqueta própria da coleta). */
 export function examesDoTubo(exams: any[], tube: Tubo): any[] {
-  if (tube.extra) return (exams || []).filter(e => chaveExame(e) === tube.extra!.examKey).slice(0, 1)
-  return (exams || []).filter(e => tuboDoExame(e) === tube.type)
+  const extra = tube.extra
+  if (extra) return (exams || []).filter(e => chaveExame(e) === extra.examKey).slice(0, 1)
+  return (exams || []).filter(e =>
+    tuboDoExame(e) === (tube.baseType || tube.type) &&
+    (tube.separado ? e.etiquetaSeparada === tube.separado : e.etiquetaSeparada !== 'testes_rapidos'))
 }
 
 /** Linha de exames da etiqueta, com o nome da coleta quando o exame tem coletas em tempos diferentes. */
