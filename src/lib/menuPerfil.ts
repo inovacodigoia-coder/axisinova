@@ -21,9 +21,11 @@ export function perfilTemPermissaoEspecial(
   return Array.isArray(permissoes) && codigos.some(codigo => permissoes.includes(codigo))
 }
 
-/** Um setor pode restringir um item, mas não pode reativar algo negado pelo perfil. */
+/** O que está marcado no setor (Editar Setor) prevalece; sem marcação, vale o perfil. */
 export function itemComumVisivelNoPerfil(perfilPermite: boolean, overrideDoSetor?: boolean): boolean {
-  return perfilPermite && overrideDoSetor !== false
+  if (overrideDoSetor === true) return true
+  if (overrideDoSetor === false) return false
+  return perfilPermite
 }
 
 export type AcaoSorotecaMenu = 'ver' | 'armazenar' | 'descartar' | 'configurar'

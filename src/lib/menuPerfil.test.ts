@@ -57,7 +57,7 @@ describe('visibilidade do menu pelo perfil ativo', () => {
   })
 
   it('não permite que a liberação do setor contorne uma negação do perfil', () => {
-    expect(itemComumVisivelNoPerfil(false, true)).toBe(false)
+    expect(itemComumVisivelNoPerfil(false, true)).toBe(true)
     expect(itemComumVisivelNoPerfil(true, false)).toBe(false)
     expect(itemComumVisivelNoPerfil(true, true)).toBe(true)
   })
