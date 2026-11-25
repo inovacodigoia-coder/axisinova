@@ -330,3 +330,9 @@
 - [x] Auditar equivalências clínicas, códigos reaproveitados com nomes diferentes, bancadas, materiais, laudos e referências; os quatro inativos das outras empresas já existiam na LabSaúde.
 - [x] Copiar somente dois exames realmente ausentes: TOTG2 (Curva Glicêmica de 2 Dosagens, Bioquímica) e HEMOA (Hemocultura Automatizada, Pardini), cada um com seu laudo; não copiar preços nem alterar existentes.
 - [x] Validar TOTG2 com 2 parâmetros, 8 referências, TUSS 40301627 e SIGTAP 0202010040; HEMOA com laudo da bancada de apoio; 128 exames laboratoriais ativos, zero duplicações nos novos e zero preços copiados.
+
+# Restrição opcional de origens na Busca de Atendimentos
+- [ ] Levantar o modal Editar Usuário, a consulta da Busca de Atendimentos e as regras atuais de acesso por empresa.
+- [ ] Criar configuração desativada por padrão e associação de várias origens por usuário, com salvamento seguro.
+- [ ] Aplicar o filtro somente quando ativo; desativado, preservar a visualização de todas as origens.
+- [ ] Testar múltiplas origens, isolamento por empresa/usuário e comportamento desativado; conferir a tela.
