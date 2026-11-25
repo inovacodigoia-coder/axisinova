@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Search, Plus, Filter, LayoutGrid, List, Edit2, Trash2, Beaker, AlertTriangle, ChevronLeft, ChevronRight, Upload, Download, Loader2 } from 'lucide-react'
 import { ImportarPlanilhaModal } from '@/components/lab/catalog/ImportarPlanilhaModal'
+import { configuracaoExame, configuracaoParametro } from '@/lib/catalogoConfiguracao'
 import { ExportCatalogDialog } from '@/components/lab/catalog/ExportCatalogDialog'
 import { Badge } from '@/components/ui/badge'
 import { useNavigate } from 'react-router-dom'
@@ -165,7 +166,8 @@ export default function LabCatalogPage() {
         'Exige Autorização': e.requiresAuthorization ? 'Sim' : 'Não',
         'Metodologia': e.methodology || '',
         'Observações do Laudo': e.reportObservations || '',
-        'Equipamento Interface': e.interfacingConfig?.equipmentCode || ''
+        'Equipamento Interface': e.interfacingConfig?.equipmentCode || '',
+        'Configuração completa': configuracaoExame(e),
       }))
 
       // 2. Parâmetros e Máscara
@@ -203,7 +205,8 @@ export default function LabCatalogPage() {
         // Use parameters from the new table if they exist
         const examDbParams = dbParameters?.filter(p => p.exam_id === e.id) || [];
         
-        if (examDbParams.length > 0) {
+        // A tela de edição usa os parâmetros do exame (JSON); a tabela só vale se ele estiver vazio.
+        if (jsonParams.length === 0 && examDbParams.length > 0) {
           examDbParams.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)).forEach((p, i) => {
             paramsData.push({
               'Código': examCode,
@@ -241,7 +244,13 @@ export default function LabCatalogPage() {
               'Calculado': yn(p.isCalculated),
               'Oculto': yn(p.isHidden),
               'Fórmula do parâmetro': p.formula || '',
-              ...exportReferenceModeColumns(p)
+              'Casas decimais': p.decimals ?? '',
+              'Valor padrão ativo': yn(p.defaultValueEnabled),
+              'Valor padrão': p.defaultValue ?? '',
+              'Permite editar seleção': yn(p.allowEditSelection),
+              'Várias opções': yn(p.multiSelect),
+              ...exportReferenceModeColumns(p),
+              'Configuração completa': configuracaoParametro(p),
             })
           })
         }
@@ -260,7 +269,8 @@ export default function LabCatalogPage() {
         // Use database references if they exist
         const examDbRefs = dbReferences?.filter(r => r.exam_id === e.id) || [];
         
-        if (examDbRefs.length > 0) {
+        const temJson = Array.isArray(e.parameters) && e.parameters.length > 0
+        if (!temJson && examDbRefs.length > 0) {
           // Lookup das faixas no JSON do exame (fonte das flags de jejum/gravidez)
           const jsonRefs = new Map<string, any>()
           e.parameters?.forEach((p: any) => {

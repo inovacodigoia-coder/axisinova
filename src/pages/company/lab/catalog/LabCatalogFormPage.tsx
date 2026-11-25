@@ -1110,24 +1110,24 @@ function ParametersSection({
 
         <div className="border rounded-xl overflow-hidden bg-card shadow-md">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
+            <table className="w-full min-w-[1500px] text-left text-sm border-collapse">
               <thead className="bg-muted/50 border-b">
                 <tr>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-14 text-center border-r">#</th>
                   <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[220px]">Nome do Parâmetro</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-16 text-center">Seção</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-16 text-center">Equip.</th>
-                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-28">Tipo</th>
-                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-28">Origem</th>
-                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-32">Unidade</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[120px] text-center">Seção</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[100px] text-center">Equip.</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[110px]">Tipo</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[120px]">Origem</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[140px]">Unidade</th>
                   <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-24 text-center">Ref.</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Obrig</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Neg</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Calc</th>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Oculto</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center min-w-[110px]">Valor</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center" title="Seleção: permite alterar o texto escolhido na Digitação de Resultados">Editar</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center" title="Seleção: permite marcar mais de uma opção na Digitação de Resultados">Várias</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center min-w-[170px]">Valor</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center min-w-[64px]" title="Seleção: permite alterar o texto escolhido na Digitação de Resultados">Editar</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center min-w-[64px]" title="Seleção: permite marcar mais de uma opção na Digitação de Resultados">Várias</th>
                   <th className="px-3 py-3 text-right"></th>
                 </tr>
               </thead>
@@ -1176,7 +1176,7 @@ function ParametersSection({
                       <td className="px-1 py-2">
                         <Input 
                           className="h-8 text-[10px] text-center uppercase border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent" 
-                          value={param.section} 
+                          value={param.section} title={param.section || undefined} 
                           onChange={(e) => updateParameter(param.id, 'section', e.target.value)}
                           placeholder="ER"
                         />
@@ -1184,7 +1184,7 @@ function ParametersSection({
                       <td className="px-1 py-2">
                         <Input 
                           className="h-8 text-[10px] text-center border-transparent hover:border-border focus:border-primary group-hover:bg-white bg-transparent" 
-                          value={param.equipCode} 
+                          value={param.equipCode} title={param.equipCode || undefined} 
                           onChange={(e) => updateParameter(param.id, 'equipCode', e.target.value)}
                           placeholder="00"
                         />
@@ -1332,7 +1332,8 @@ function ParametersSection({
                               placeholder="Valor"
                               aria-label={`Valor padrão de ${param.name || 'parâmetro'}`}
                               onChange={(e) => updateParameter(param.id, 'defaultValue', e.target.value)}
-                              className="h-7 w-20 text-[11px] px-2"
+                              title={param.defaultValue || undefined}
+                              className="h-7 w-28 text-[11px] px-2"
                             />
                           )}
                         </div>

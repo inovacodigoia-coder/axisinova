@@ -1,3 +1,5 @@
+import { lerConfiguracao, lerColunasExtrasParametro } from '@/lib/catalogoConfiguracao';
+
 import { importReferenceModeColumns } from '@/lib/examReferenceMode';
 import React, { useState, useRef, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,6 +53,7 @@ interface ExamImportData {
   sigtapCode?: string;
   parameters: any[];
   referenceValues: any[];
+  configuracao?: Record<string, unknown>;
 }
 
 export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: ImportarPlanilhaModalProps) => {
@@ -180,7 +183,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
             unidadeMedida: unit,
             ...importExamBillingCodes(row),
             parameters: examParams,
-            referenceValues: examRefs
+            referenceValues: examRefs,
+            configuracao: lerConfiguracao(row, 'exame'),
           });
 
           if (existingCodes.includes(code)) {
@@ -277,6 +281,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               }));
 
             return {
+              ...lerConfiguracao(p, 'parametro'),
               id: idx + 1,
               name: paramName,
               section: String(p['Seção'] || p['SEÇÃO'] || p['Setor'] || p['SETOR'] || ''),
@@ -290,6 +295,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               isHidden: p['Oculto'] === 'Sim' || p['Oculto'] === true,
               formula: String(p['Fórmula do parâmetro'] || p['Fórmula'] || ''),
               options: parseParamOptions(p),
+              ...lerColunasExtrasParametro(p),
               referenceValues: refs,
               ...(() => {
                 // Planilha antiga sem as colunas: mantém o modo já cadastrado
@@ -305,6 +311,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           .filter(Boolean) as any[];
 
         const examPayload: any = {
+          ...(examData.configuracao || {}),
           name: examData.nome,
           internalCode: examData.codigo,
           ...(examData.tussCode !== undefined ? { tussCode: examData.tussCode } : {}),
@@ -317,8 +324,8 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
           workbenchId: wbId,
           isActive: true,
           showDeadline: true,
-          confirmationQuestions: [], 
-          attachmentRules: [],
+          confirmationQuestions: (examData.configuracao as any)?.confirmationQuestions ?? [],
+          attachmentRules: (examData.configuracao as any)?.attachmentRules ?? [],
           parameters: appParameters,
           referenceValues: appParameters.flatMap(p => p.referenceValues || []),
         };
@@ -339,6 +346,15 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         if (examId) {
           console.log(`[ImportarPlanilhaModal] Processing ${examData.parameters.length} parameters for exam ${examData.codigo}`);
           
+          // A planilha manda: parâmetros que não estão nela saem do exame.
+          const nomesDaPlanilha = new Set(appParameters.map((ap: any) => String(ap.name).trim().toLowerCase()))
+          const { data: atuais } = await supabase.from('lab_exam_parameters').select('id, name').eq('exam_id', examId)
+          const sobrando = (atuais || []).filter((a: any) => !nomesDaPlanilha.has(String(a.name || '').trim().toLowerCase())).map((a: any) => a.id)
+          if (sobrando.length > 0) {
+            const { error: delError } = await supabase.from('lab_exam_parameters').delete().in('id', sobrando)
+            if (delError) console.error('[ImportarPlanilhaModal] Error removing old params:', delError)
+          }
+
           for (const [pIdx, p] of examData.parameters.entries()) {
             const paramName = String(p['Nome'] || p['NOME'] || p['Parâmetro'] || p['PARAMETRO'] || p['Nome do parâmetro'] || '').trim();
             if (!paramName) continue;
