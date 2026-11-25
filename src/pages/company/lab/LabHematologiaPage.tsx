@@ -297,7 +297,7 @@ export default function LabHematologiaPage() {
       if (!cid) return
       const { data } = await supabase
         .from('lab_equipments' as any)
-        .select('id, name, serial_number, connection_type, manufacturer')
+        .select('id, name, serial_number, connection_type, manufacturer, differential_type')
         .eq('company_id', cid)
         .order('name')
       if (!active || !data) return
@@ -319,7 +319,11 @@ export default function LabHematologiaPage() {
   /** Layout do equipamento selecionado (p8000 e Count_380 implementados). */
   const equipmentLayout = useMemo(() => {
     const serial = String(selectedEquipment?.serial_number || '').toLowerCase().replace(/[\s-]/g, '_')
-    return EQUIPMENT_LAYOUTS[serial] || null
+    const own = EQUIPMENT_LAYOUTS[serial]
+    if (own) return own
+    // Qualquer aparelho marcado como "3 partes" usa a mesma tela do Count 380.
+    if (String(selectedEquipment?.differential_type || '').startsWith('3')) return EQUIPMENT_LAYOUTS.count_380
+    return null
   }, [selectedEquipment])
   const hasEquipmentLayout = true
   const graphAreas = equipmentLayout?.graphs || GRAPH_AREAS
