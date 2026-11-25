@@ -317,3 +317,10 @@
 - [x] Salvar formato por usuário, empresa e documento; reaplicar no modal do cadastro e dos detalhes.
 - [x] Testar persistência de A4 e isolamento da preferência; não salvar seleção de documentos nem coleta.
 - [ ] Conferência logada na tela: não há sessão autorizada do usuário nesta conversa.
+
+# Catálogo LabSaúde — junção do PDF e SIGTAP
+- [x] Extrair e validar os 109 exames únicos do PDF, inclusive códigos com pontuação ou zeros iniciais; consolidar 3 repetições (CRFF, T4TO e SAOC).
+- [x] Comparar com o catálogo atual da LabSaúde sem apagar registros; nos 51 existentes correspondentes, manter Código, Nome e prazo e alterar somente SIGTAP quando havia código vigente.
+- [x] Pesquisar e conferir os códigos SIGTAP no UniSUS; 11 exames ficaram sem código por não haver correspondência vigente segura: ALB, COLF, UROC, TTLA, COAG, PSA1, CHIK, COVI, COV, COVM e PH.
+- [x] Atualizar 48 SIGTAP e inserir 55 exames com seus laudos L001, sem preços e com prazos do PDF somente nos novos; nenhuma outra empresa alterada.
+- [x] Reler e validar: 126 exames laboratoriais, 95 com SIGTAP, zero divergências nas 48 atualizações, zero duplicações nos 55 novos, zero preços criados e build OK.
