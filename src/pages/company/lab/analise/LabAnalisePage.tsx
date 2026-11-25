@@ -23,6 +23,7 @@ import {
   Filter,
   ChevronDown,
   Calendar as CalendarIcon,
+  CalendarClock,
   Trash2,
   Layout,
   Truck,
@@ -55,6 +56,7 @@ import { ptBR } from 'date-fns/locale';
 import { matchesExamWorkbench, resolveExamWorkbench } from '@/lib/labExamWorkbench';
 import { indiceDeEtiquetas, pedidosDaEtiqueta } from '@/lib/buscaEtiqueta';
 import { useCompanySequenceId } from '@/hooks/useCompanySequenceId';
+import { coletasAlteradas, exameDisponivelParaAnalise, textoColetaAlterada } from '@/lib/coletaProgramadaAnalise';
 
 /** Converte string de data para Date no fuso local (evita deslocamento de 1 dia em datas "YYYY-MM-DD"). */
 function parseLocalDate(value?: string | Date | null): Date | null {
@@ -237,17 +239,9 @@ export default function LabAnalisePage() {
         // Coleta cancelada marca explicitamente collected = false; nesse caso o exame sai da fila.
         // Caso contrário, considera as marcações próprias OU a coleta confirmada no pedido.
         const orderCollected = allowedOrderStatuses.includes(orderStatus);
-        const examIsCollected = exam.collected === false
-          ? false
-          : (!!exam.collected || !!exam.isColeta || !!exam.collectedAt || orderCollected);
-        // Exames já digitados/liberados permanecem visíveis
-        const alreadyWorked = ['digitized', 'released', 'liberado', 'validated', 'retificado'].includes(
-          String(exam.status || '').toLowerCase()
-        );
-
-        if (!examIsCollected && !alreadyWorked) return;
-        // Coleta programada para data futura não gera pendência até a data chegar
-        if ((exam?.coletaProgramada && exam?.collectedAt && new Date(exam.collectedAt).getTime() > Date.now()) && !alreadyWorked) return;
+        // Coleta com data alterada permanece na Análise, inclusive quando futura;
+        // coleta cancelada/ausente continua fora, salvo exame já digitado/liberado.
+        if (!exameDisponivelParaAnalise(exam, orderCollected)) return;
 
         // Se o status do pedido estiver permitido e bater com o filtro selecionado
         if (allowedOrderStatuses.includes(orderStatus) && matchesStatus) {
@@ -708,6 +702,7 @@ export default function LabAnalisePage() {
                           ) : (
                             groupedExams.map((group) => {
                               const isExpanded = !!expandedGroups[group.protocol];
+                              const datasColetasAlteradas = coletasAlteradas(group.exams);
                               return (
                                 <div key={group.id || group.protocol} className="space-y-1.5">
                                   <div className="flex items-center justify-between px-1">
@@ -738,6 +733,17 @@ export default function LabAnalisePage() {
                                       >
                                         {group.patientName || 'Paciente sem nome'}
                                       </span>
+                                      {datasColetasAlteradas.length > 0 && (
+                                        <Badge
+                                          variant="outline"
+                                          className="h-5 shrink-0 gap-1 border-scheduled/30 bg-scheduled/10 px-1.5 text-[9px] font-bold text-scheduled"
+                                          title={datasColetasAlteradas.map(textoColetaAlterada).join('; ')}
+                                        >
+                                          <CalendarClock className="h-3 w-3" />
+                                          {textoColetaAlterada(datasColetasAlteradas[0])}
+                                          {datasColetasAlteradas.length > 1 && ` +${datasColetasAlteradas.length - 1}`}
+                                        </Badge>
+                                      )}
                                       {group.exams.some((e: any) => apoioModos[`${e.orderId}:${e.examId}`]) && <Truck className="h-3 w-3 text-muted-foreground" aria-label="Tem exame de apoio" />}
                                       {group.exams.some((e: any) => apoioModos[`${e.orderId}:${e.examId}`]?.alerta) && <AlertTriangle className="h-3 w-3 text-destructive" aria-label="Exame de apoio com alerta" />}
                                     </div>

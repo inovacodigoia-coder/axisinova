@@ -337,3 +337,10 @@
 - [x] Aplicar o filtro no servidor somente quando ativo; desativado, preservar todas as origens; falha de leitura não libera pedidos.
 - [x] Testar múltiplas origens, isolamento por empresa/usuário e comportamento desativado: 12 testes de tela/consulta + 7 SQL; build OK e zero configurações ativas no banco real.
 - [ ] Conferir o modal e a busca autenticados: a sessão própria restaurada redirecionou ao login; nenhum usuário real foi alterado.
+
+# Coleta com data alterada na Análise
+- [x] Manter o paciente na fila mesmo quando a coleta estiver programada para data futura, sem alterar as demais filas.
+- [x] Mostrar ao lado do nome do paciente o aviso de coleta alterada com a data programada.
+- [x] Testar inclusão da coleta futura, preservação da coleta cancelada, busca por etiqueta e apresentação da data: 22 testes e build OK.
+- [ ] Conferir a lista e o aviso com sessão autenticada: a prévia está em /login; nenhum pedido real foi alterado.
+- [ ] Mapa de Trabalho e Painel Operacional continuam ocultando coletas futuras; aguarda decisão do usuário sobre ampliar a mesma regra.
