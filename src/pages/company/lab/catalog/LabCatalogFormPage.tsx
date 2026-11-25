@@ -1116,24 +1116,18 @@ function ParametersSection({
 
         <div className="border rounded-xl overflow-hidden bg-card shadow-md">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1500px] text-left text-sm border-collapse">
+            <table className="w-full text-left text-sm border-collapse">
               <thead className="bg-muted/50 border-b">
                 <tr>
                   <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-14 text-center border-r">#</th>
-                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[220px]">Nome do Parâmetro</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[120px] text-center">Seção</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[100px] text-center">Equip.</th>
-                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[110px]">Tipo</th>
-                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[120px]">Origem</th>
-                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[140px]">Unidade</th>
+                  <th className="px-4 py-3 font-bold text-[10px] uppercase text-muted-foreground min-w-[180px]">Nome do Parâmetro</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-[12%] text-center">Seção</th>
+                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground w-[9%] text-center">Equip.</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-[11%]">Tipo</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-[12%]">Origem</th>
+                  <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-[15%]">Unidade</th>
                   <th className="px-3 py-3 font-bold text-[10px] uppercase text-muted-foreground w-24 text-center">Ref.</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Obrig</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Neg</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Calc</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center">Oculto</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center min-w-[170px]">Valor</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center min-w-[64px]" title="Seleção: permite alterar o texto escolhido na Digitação de Resultados">Editar</th>
-                  <th className="px-2 py-3 font-bold text-[10px] uppercase text-muted-foreground text-center min-w-[64px]" title="Seleção: permite marcar mais de uma opção na Digitação de Resultados">Várias</th>
+                  
                   <th className="px-3 py-3 text-right"></th>
                 </tr>
               </thead>
@@ -1248,7 +1242,33 @@ function ParametersSection({
                           {param.referenceValues?.length > 0 ? `${param.referenceValues.length} Faixas` : 'Definir'}
                         </Button>
                       </td>
-                      <td className="px-2 py-2">
+                      <td className="px-3 py-2 text-right">
+                         <div className="flex justify-end">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-muted rounded-full">
+                                  <MoreVertical className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-32">
+                                <DropdownMenuItem 
+                                  className="text-red-500 focus:text-red-500 focus:bg-red-50 cursor-pointer gap-2"
+                                  onClick={() => removeParameter(param.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                         </div>
+                      </td>
+                    </tr>
+                    <tr className="!border-t-0">
+                      <td></td>
+                      <td colSpan={8} className="px-4 pb-2 pt-0">
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground">Obrig</span>
                         <div className="flex justify-center">
                           <button
                             type="button"
@@ -1264,8 +1284,9 @@ function ParametersSection({
                             )} />
                           </button>
                         </div>
-                      </td>
-                      <td className="px-2 py-2">
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground">Neg</span>
                         <div className="flex justify-center">
                           <button
                             type="button"
@@ -1281,8 +1302,9 @@ function ParametersSection({
                             )} />
                           </button>
                         </div>
-                      </td>
-                      <td className="px-2 py-2">
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground">Calc</span>
                         <div className="flex justify-center">
                           <button
                             type="button"
@@ -1298,8 +1320,9 @@ function ParametersSection({
                             )} />
                           </button>
                         </div>
-                      </td>
-                      <td className="px-2 py-2">
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground">Oculto</span>
                         <div className="flex justify-center">
                           <button
                             type="button"
@@ -1315,8 +1338,9 @@ function ParametersSection({
                             )} />
                           </button>
                         </div>
-                      </td>
-                      <td className="px-2 py-2">
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground">Valor</span>
                         <div className="flex items-center justify-center gap-1.5">
                           <button
                             type="button"
@@ -1343,8 +1367,9 @@ function ParametersSection({
                             />
                           )}
                         </div>
-                      </td>
-                      <td className="px-2 py-2">
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground">Editar</span>
                         <div className="flex justify-center">
                           <button
                             type="button"
@@ -1363,8 +1388,9 @@ function ParametersSection({
                             )} />
                           </button>
                         </div>
-                      </td>
-                      <td className="px-2 py-2">
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-muted-foreground">Várias</span>
                         <div className="flex justify-center">
                           <button
                             type="button"
@@ -1383,32 +1409,14 @@ function ParametersSection({
                             )} />
                           </button>
                         </div>
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                         <div className="flex justify-end">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:bg-muted rounded-full">
-                                  <MoreVertical className="h-3.5 w-3.5" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-32">
-                                <DropdownMenuItem 
-                                  className="text-red-500 focus:text-red-500 focus:bg-red-50 cursor-pointer gap-2"
-                                  onClick={() => removeParameter(param.id)}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                  Excluir
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                         </div>
+                      </div>
+                        </div>
                       </td>
                     </tr>
                     
                     {param.type === 'selection' && (
                       <tr>
-                        <td colSpan={16} className="px-4 py-3 bg-cyan-50/40 border-t border-b border-cyan-100">
+                        <td colSpan={9} className="px-4 py-3 bg-cyan-50/40 border-t border-b border-cyan-100">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-[9px] font-bold uppercase text-cyan-700">
                               <Settings2 className="h-3 w-3" />
@@ -1458,7 +1466,7 @@ function ParametersSection({
 
                     {param.isCalculated && (
                       <tr>
-                        <td colSpan={16} className="px-4 py-3 bg-blue-50/30 border-t border-b border-blue-100">
+                        <td colSpan={9} className="px-4 py-3 bg-blue-50/30 border-t border-b border-blue-100">
                           <div className="space-y-2">
                             <div className="flex items-center gap-2 text-[9px] font-bold uppercase text-blue-600">
                               <Calculator className="h-3 w-3" />
@@ -1535,7 +1543,7 @@ function ParametersSection({
                 ))}
                 {(!parameters || parameters.length === 0) && (
                   <tr>
-                    <td colSpan={16} className="px-4 py-10 text-center text-muted-foreground italic text-xs">
+                    <td colSpan={9} className="px-4 py-10 text-center text-muted-foreground italic text-xs">
                       Nenhum parâmetro cadastrado. Utilize o botão acima para adicionar.
                     </td>
                   </tr>
