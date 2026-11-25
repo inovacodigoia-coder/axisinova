@@ -11042,6 +11042,48 @@ export type Database = {
           },
         ]
       }
+      user_attendance_origin_restrictions: {
+        Row: {
+          company_id: string
+          created_at: string
+          enabled: boolean
+          origin_ids: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          enabled?: boolean
+          origin_ids?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          enabled?: boolean
+          origin_ids?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_attendance_origin_restrictions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_attendance_origin_restrictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_notifications: {
         Row: {
           action_route: string | null
@@ -15103,6 +15145,10 @@ export type Database = {
       triagem__semear: { Args: { _company: string }; Returns: undefined }
       triagem_semear_padroes: { Args: never; Returns: undefined }
       triagem_tem_permissao: { Args: { _perm: string }; Returns: boolean }
+      usuario_origens_restricao_salvar: {
+        Args: { _enabled: boolean; _origin_ids: string[]; _user_id: string }
+        Returns: undefined
+      }
       usuario_provisionar: {
         Args: {
           p_badge: string

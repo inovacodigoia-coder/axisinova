@@ -13,6 +13,7 @@ import { usePatients } from '@/hooks/usePatients'
 import { useLabSettings } from '@/hooks/useLabSettings'
 import { companyHeaderFromSettings } from '@/lib/attendanceDocHeader'
 import { useCompanySequenceId } from '@/hooks/useCompanySequenceId'
+import { useUserOriginRestriction } from '@/hooks/useUserOriginRestriction'
 import { etiquetasDosExames, useMateriaisTubos } from '@/lib/tubos'
 import { indiceDeEtiquetas, pedidosDaEtiqueta, buscaSoNumeros, codigosDasEtiquetas } from '@/lib/buscaEtiqueta'
 import { AttendancePrintModal } from '../print/AttendancePrintModal'
@@ -105,6 +106,7 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
   const { patients, loading: patientsLoading, refresh: refreshPatients } = usePatients()
   const { settings } = useLabSettings()
   const companySequenceId = useCompanySequenceId()
+  const originRestriction = useUserOriginRestriction(user?.id, open)
   const [search, setSearch] = useState('')
   const [patientSearch, setPatientSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -197,7 +199,11 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
     () => (!hasTermSearch && dateRange ? { from: dateRange.from.toISOString(), to: dateRange.to.toISOString() } : null),
     [hasTermSearch, dateRange],
   )
-  const { orders, updateOrder, loading } = useAttendanceCadastro({ range: serverRange })
+  const { orders, updateOrder, loading } = useAttendanceCadastro({
+    range: serverRange,
+    originIds: originRestriction.enabled ? originRestriction.originIds : null,
+    enabled: open && !originRestriction.loading && !originRestriction.error,
+  })
 
   // Índice código da etiqueta → pedido, montado só quando há busca
   const indiceEtiquetas = useMemo(
@@ -422,6 +428,12 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
               ))}
             </div>
           </div>
+
+          {originRestriction.enabled && !originRestriction.loading && !originRestriction.error && (
+            <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-primary">
+              Filtro por origem ativo: exibindo somente {originRestriction.originIds.length} origem{originRestriction.originIds.length === 1 ? '' : 's'} associada{originRestriction.originIds.length === 1 ? '' : 's'} ao seu usuário.
+            </div>
+          )}
         </div>
 
         {/* Results Table Header */}
@@ -440,7 +452,12 @@ export function AttendanceLookupModal({ open, onClose, unitName, guicheName, onA
 
         {/* Results */}
         <div className="flex-1 overflow-y-auto bg-background">
-          {(loading || patientsLoading) ? (
+          {originRestriction.error ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-16 px-6 text-center">
+              <p className="text-sm text-destructive">{originRestriction.error}</p>
+              <Button variant="outline" size="sm" onClick={() => void originRestriction.reload()}>Tentar novamente</Button>
+            </div>
+          ) : (loading || patientsLoading || originRestriction.loading) ? (
             <div className="flex items-center justify-center py-20">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
             </div>

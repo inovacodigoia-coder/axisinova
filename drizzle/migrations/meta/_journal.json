@@ -1429,6 +1429,13 @@
       "when": 1795541305207,
       "tag": "0203_preferencias_formato_impressao",
       "breakpoints": true
+    },
+    {
+      "idx": 204,
+      "version": "7",
+      "when": 1795572800162,
+      "tag": "0204_restricao_origens_busca_usuario",
+      "breakpoints": true
     }
   ]
 }

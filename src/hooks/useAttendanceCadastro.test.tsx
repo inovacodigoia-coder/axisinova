@@ -73,4 +73,23 @@ describe('lista de atendimentos', () => {
     expect(calls).toContainEqual({ method: 'in', args: ['status', ['collection_done', 'in_analysis', 'validation', 'released']] })
     expect(calls.some(c => c.method === 'gte' || c.method === 'lte')).toBe(false)
   })
+
+  it('restrição ativa consulta no servidor todas as origens associadas ao usuário', async () => {
+    renderHook(() => useAttendanceCadastro({ originIds: ['origem-b', 'origem-a', 'origem-b'] }), { wrapper })
+    await waitFor(() => expect(calls.some(c => c.method === 'range')).toBe(true))
+    expect(calls).toContainEqual({ method: 'in', args: ['origin_id', ['origem-a', 'origem-b']] })
+  })
+
+  it('restrição desativada não acrescenta filtro de origem', async () => {
+    renderHook(() => useAttendanceCadastro({ originIds: null }), { wrapper })
+    await waitFor(() => expect(calls.some(c => c.method === 'range')).toBe(true))
+    expect(calls.some(c => c.method === 'in' && c.args[0] === 'origin_id')).toBe(false)
+  })
+
+  it('restrição ativa sem origem não consulta nem libera pedidos', async () => {
+    const { result } = renderHook(() => useAttendanceCadastro({ originIds: [] }), { wrapper })
+    await waitFor(() => expect(result.current.loading).toBe(false))
+    expect(result.current.orders).toEqual([])
+    expect(calls.some(c => c.method === 'range')).toBe(false)
+  })
 })

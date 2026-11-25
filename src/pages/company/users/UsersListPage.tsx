@@ -11,6 +11,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { useCompanyContext } from '@/context/CompanyContext'
+import { useUserOriginRestriction } from '@/hooks/useUserOriginRestriction'
 
 interface ProfileRow {
   id: string
@@ -221,6 +224,8 @@ const slugifyRole = (name: string) =>
     .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')
 
 function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile: ProfileRow | null; extraRoles?: string[]; onClose: () => void; onSaved: () => void }) {
+  const { availableOrigins } = useCompanyContext()
+  const originRestriction = useUserOriginRestriction(profile?.id, !!profile)
   const [fullName, setFullName] = useState('')
   const [cpf, setCpf] = useState('')
   const [role, setRole] = useState('')
@@ -236,6 +241,8 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
   const [councilUf, setCouncilUf] = useState('')
   const [councilNumber, setCouncilNumber] = useState('')
   const [badgeCode, setBadgeCode] = useState('')
+  const [restrictOrigins, setRestrictOrigins] = useState(false)
+  const [selectedOriginIds, setSelectedOriginIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [sendingReset, setSendingReset] = useState(false)
   const [manualOpen, setManualOpen] = useState(false)
@@ -273,11 +280,19 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
       setCouncilUf(profile.council_uf || '')
       setCouncilNumber(profile.council_number || '')
       setBadgeCode(profile.badge_code || '')
+      setRestrictOrigins(false)
+      setSelectedOriginIds([])
       setCreatingRole(false)
       setNewRoleName('')
       setCustomRoles([])
     }
   }, [profile])
+
+  useEffect(() => {
+    if (!profile || originRestriction.loading || originRestriction.error) return
+    setRestrictOrigins(originRestriction.enabled)
+    setSelectedOriginIds(originRestriction.originIds)
+  }, [profile?.id, originRestriction.loading, originRestriction.error, originRestriction.enabled, originRestriction.originIds])
 
   useEffect(() => {
     let active = true
@@ -299,12 +314,25 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
       toast.error('Preencha todos os campos obrigatórios')
       return
     }
+    if (originRestriction.loading) {
+      toast.error('Aguarde o carregamento das origens do usuário')
+      return
+    }
+    if (originRestriction.error) {
+      toast.error('Recarregue as origens do usuário antes de salvar')
+      return
+    }
+    if (restrictOrigins && selectedOriginIds.length === 0) {
+      toast.error('Selecione ao menos uma origem para ativar a restrição')
+      return
+    }
+
     setSaving(true)
     const { error } = await supabase
       .from('profiles')
-      .update({ 
-        full_name: fullName, 
-        cpf: cpf || null, 
+      .update({
+        full_name: fullName,
+        cpf: cpf || null,
         role,
         can_print_labels: canPrintLabels,
         is_admin: isAdminUser,
@@ -317,12 +345,25 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
       .eq('id', profile.id)
 
     if (error) {
+      setSaving(false)
       toast.error('Erro ao atualizar usuário')
-    } else {
-      toast.success('Usuário atualizado')
-      onSaved()
+      return
     }
+
+    const { error: originError } = await supabase.rpc('usuario_origens_restricao_salvar', {
+      _user_id: profile.id,
+      _enabled: restrictOrigins,
+      _origin_ids: selectedOriginIds,
+    })
     setSaving(false)
+
+    if (originError) {
+      toast.error(`Os dados foram salvos, mas a restrição de origens não foi alterada: ${originError.message}`)
+      return
+    }
+
+    toast.success('Usuário atualizado')
+    onSaved()
   }
 
   const handleEmailReset = async () => {
@@ -617,6 +658,77 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
                 <Label htmlFor="adm-toggle" className="text-sm cursor-pointer select-none">ADM</Label>
               </div>
             </div>
+          </div>
+
+          {/* Restrição opcional somente da Busca de Atendimentos */}
+          <div className="space-y-4 border-t pt-4">
+            <div className="flex items-start justify-between gap-4 rounded-xl border border-border bg-muted/20 p-4">
+              <div className="space-y-1">
+                <Label htmlFor="restrict-origins" className="text-sm font-semibold cursor-pointer">
+                  Restringir Busca de Atendimentos por origem
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Quando ativa, o usuário verá somente pedidos das origens selecionadas. Desativada, verá todas.
+                </p>
+              </div>
+              <Switch
+                id="restrict-origins"
+                checked={restrictOrigins}
+                onCheckedChange={setRestrictOrigins}
+                disabled={originRestriction.loading || !!originRestriction.error}
+                aria-label="Restringir Busca de Atendimentos por origem"
+              />
+            </div>
+
+            {originRestriction.loading && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Carregando origens do usuário…
+              </div>
+            )}
+
+            {originRestriction.error && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive">
+                <span>{originRestriction.error}</span>
+                <Button type="button" variant="outline" size="sm" onClick={() => void originRestriction.reload()}>
+                  Tentar novamente
+                </Button>
+              </div>
+            )}
+
+            {restrictOrigins && !originRestriction.loading && !originRestriction.error && (
+              <div className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Origens permitidas</p>
+                  <p className="text-xs text-muted-foreground">Marque uma ou mais origens desta empresa.</p>
+                </div>
+                {availableOrigins.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhuma origem cadastrada nesta empresa.</p>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                    {availableOrigins.map(origin => (
+                      <label
+                        key={origin.id}
+                        className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm cursor-pointer hover:bg-accent/50"
+                      >
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 accent-primary"
+                          checked={selectedOriginIds.includes(origin.id)}
+                          onChange={event => setSelectedOriginIds(current => event.target.checked
+                            ? [...current, origin.id]
+                            : current.filter(id => id !== origin.id))}
+                        />
+                        <span className="min-w-0 flex-1 truncate">{origin.name}</span>
+                        {origin.internal_code && <span className="text-xs text-muted-foreground">{origin.internal_code}</span>}
+                      </label>
+                    ))}
+                  </div>
+                )}
+                <p className="text-xs font-medium text-primary">
+                  {selectedOriginIds.length} origem{selectedOriginIds.length === 1 ? '' : 's'} selecionada{selectedOriginIds.length === 1 ? '' : 's'}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Dados Profissionais */}

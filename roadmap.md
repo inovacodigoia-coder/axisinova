@@ -332,7 +332,8 @@
 - [x] Validar TOTG2 com 2 parâmetros, 8 referências, TUSS 40301627 e SIGTAP 0202010040; HEMOA com laudo da bancada de apoio; 128 exames laboratoriais ativos, zero duplicações nos novos e zero preços copiados.
 
 # Restrição opcional de origens na Busca de Atendimentos
-- [ ] Levantar o modal Editar Usuário, a consulta da Busca de Atendimentos e as regras atuais de acesso por empresa.
-- [ ] Criar configuração desativada por padrão e associação de várias origens por usuário, com salvamento seguro.
-- [ ] Aplicar o filtro somente quando ativo; desativado, preservar a visualização de todas as origens.
-- [ ] Testar múltiplas origens, isolamento por empresa/usuário e comportamento desativado; conferir a tela.
+- [x] Levantar o modal Editar Usuário, a consulta da Busca de Atendimentos e as regras atuais de acesso por empresa.
+- [x] Criar configuração desativada por padrão e associação de várias origens por usuário, com salvamento seguro e validação da empresa.
+- [x] Aplicar o filtro no servidor somente quando ativo; desativado, preservar todas as origens; falha de leitura não libera pedidos.
+- [x] Testar múltiplas origens, isolamento por empresa/usuário e comportamento desativado: 12 testes de tela/consulta + 7 SQL; build OK e zero configurações ativas no banco real.
+- [ ] Conferir o modal e a busca autenticados: a sessão própria restaurada redirecionou ao login; nenhum usuário real foi alterado.

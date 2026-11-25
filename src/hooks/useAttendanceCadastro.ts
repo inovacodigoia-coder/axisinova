@@ -43,6 +43,8 @@ export interface AttendanceOrdersOptions {
   statuses?: readonly string[] | null
   /** Status que NÃO entram (filtro no servidor). */
   excludeStatuses?: readonly string[] | null
+  /** Somente estas origens; null/omitido = todas; lista vazia = nenhum pedido. */
+  originIds?: readonly string[] | null
   enabled?: boolean
   staleTime?: number
   refetchOnWindowFocus?: boolean
@@ -108,6 +110,7 @@ export function useAttendanceCadastro(options: AttendanceOrdersOptions = {}) {
   const range = options.range ?? null
   const statuses = options.statuses?.length ? [...options.statuses] : null
   const excludeStatuses = options.excludeStatuses?.length ? [...options.excludeStatuses] : null
+  const originIds = options.originIds == null ? null : [...new Set(options.originIds)].sort()
   const actions = useAttendanceOrderActions()
 
   const { data, isLoading: loading } = useQuery({
@@ -116,9 +119,10 @@ export function useAttendanceCadastro(options: AttendanceOrdersOptions = {}) {
       ...(range ? ['periodo', range.from, range.to] : []),
       ...(statuses ? ['status', statuses.join(',')] : []),
       ...(excludeStatuses ? ['sem_status', excludeStatuses.join(',')] : []),
+      ...(originIds ? ['origens', originIds.join(',')] : []),
     ],
     queryFn: async () => {
-      if (!companyId) return { orders: [] as AttendanceOrder[], limitado: false }
+      if (!companyId || originIds?.length === 0) return { orders: [] as AttendanceOrder[], limitado: false }
       // Busca em blocos de 1.000 até acabar: nenhum pedido fica de fora pelo limite do servidor.
       const { linhas, limitado } = await buscarEmBlocos<any>((de, ate) => {
         let query = (supabase
@@ -128,6 +132,7 @@ export function useAttendanceCadastro(options: AttendanceOrdersOptions = {}) {
         if (!isAdmin) query = query.neq('status', 'deleted')
         if (statuses) query = query.in('status', statuses)
         if (excludeStatuses) query = query.not('status', 'in', `(${excludeStatuses.join(',')})`)
+        if (originIds) query = query.in('origin_id', originIds)
         if (range) query = query.gte('created_at', range.from).lte('created_at', range.to)
         return query
           .order('created_at', { ascending: false })
