@@ -22,6 +22,7 @@ import { useFinanceiroAcesso } from '@/hooks/useFinanceiro'
 import { useCaixaAcesso } from '@/hooks/useCaixa'
 import { useBiHospitalarAcesso } from '@/hooks/useBiHospitalar'
 import { rolloutNavigationAllowed } from '@/lib/rolloutNavigation'
+import { acaoSorotecaDaRota, itemComumVisivelNoPerfil, perfilTemPermissaoEspecial } from '@/lib/menuPerfil'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import type { SystemModule } from '@/types/permissions.types'
@@ -238,28 +239,42 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
   const crmAcesso = useCrmAcesso()
   const financeiro = useFinanceiroAcesso()
   const caixaAcesso = useCaixaAcesso()
-  const inovachatNaoLidas = useInovachatNaoLidas(!!inovachat?.ver)
   const chatInterno = useChatInternoAcesso()
   const biHospitalar = useBiHospitalarAcesso()
   const painelOperacional = usePainelOperacionalAcesso()
   const sorotecaAcesso = useSorotecaAcesso()
+
+  const permissaoEspecial = (grupo: string, codigos: string[]) =>
+    perfilTemPermissaoEspecial(user?.role, activeProfile, grupo, codigos)
+  const inovachatVisivel = !!inovachat?.ver && permissaoEspecial('inovachat', ['inovachat.visualizar'])
+  const inovachatNaoLidas = useInovachatNaoLidas(inovachatVisivel)
   const chatInternoNaoLidas = useChatInternoNaoLidas(!!chatInterno?.ver)
 
   const visibleSections = NAV_SECTIONS.map(section => ({
     ...section,
     items: section.items.filter(item => {
       if (!rolloutNavigationAllowed(item.path, almoxEnabled, activeSector?.moduleOverrides)) return false
-      if (item.path === '/app/inovachat') return !!inovachat?.ver
-      if (item.path === '/app/crm') return !!crmAcesso?.ver
+      if (item.path === '/app/inovachat') return inovachatVisivel
+      if (item.path === '/app/crm') return !!crmAcesso?.ver && permissaoEspecial('crm', ['crm.visualizar'])
       if (item.path === '/app/chat-interno') return !!chatInterno?.ver
-      if (item.path === '/app/financeiro') return !!financeiro?.ver
-      if (item.path === '/app/financeiro/caixa') return !!(caixaAcesso?.operar || caixaAcesso?.ver_todos || caixaAcesso?.configurar)
-      if (item.path === '/app/bi-hospitalar') return !!biHospitalar?.ver
-      if (item.path === '/app/lab/painel-operacional') return painelOperacional === true
-      if (item.path.startsWith('/app/soroteca')) return !!sorotecaAcesso?.ver
+      if (item.path === '/app/financeiro') return !!financeiro?.ver && permissaoEspecial('financeiro', ['financeiro.ver'])
+      if (item.path === '/app/financeiro/caixa') {
+        const acessoServidor = !!(caixaAcesso?.operar || caixaAcesso?.ver_todos || caixaAcesso?.configurar)
+        return acessoServidor && permissaoEspecial('financeiro', [
+          'financeiro.caixa.operar', 'financeiro.caixa.ver_todos', 'financeiro.caixa.configurar',
+        ])
+      }
+      if (item.path === '/app/bi-hospitalar') return !!biHospitalar?.ver && permissaoEspecial('bi_hospitalar', ['bi_hospitalar.ver'])
+      if (item.path === '/app/lab/painel-operacional') {
+        return painelOperacional === true && permissaoEspecial('lab', ['lab.painel_operacional'])
+      }
+      if (item.path.startsWith('/app/soroteca')) {
+        const acao = acaoSorotecaDaRota(item.path)
+        return !!sorotecaAcesso?.[acao] && permissaoEspecial('soroteca', [`soroteca.${acao}`])
+      }
       const profileAllows = !item.module || canAccess(item.module, 'view')
       const sectorOverride = activeSector?.moduleOverrides?.[item.path]
-      return sectorOverride !== undefined ? sectorOverride : profileAllows
+      return itemComumVisivelNoPerfil(profileAllows, sectorOverride)
     }),
   })).filter(section => section.items.length > 0)
 
