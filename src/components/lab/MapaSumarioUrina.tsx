@@ -23,10 +23,11 @@ export const URINA_CRISTAIS = [
 export const URINA_SAIS = ['Fosfatos amorfos', 'Uratos amorfos']
 export const URINA_CILINDROS = ['Hialino', 'Granuloso', 'Leucocitário', 'Hemático', 'Céreo']
 
-export function MapaSumarioUrina({ paciente, codigo }: { paciente: string; codigo?: string }) {
+export function MapaSumarioUrina({ paciente, codigo, avisoColeta }: { paciente: string; codigo?: string; avisoColeta?: string }) {
   return (
     <div className="mx-auto max-w-[180mm] py-6 text-[12px] leading-6 break-after-page print:break-after-page" style={{ breakAfter: 'page' }}>
       <div className="flex items-end gap-1 font-bold"><span>NOME:</span><span className="flex-1 border-b border-black px-1 font-normal">{paciente} {codigo ? `— ${codigo}` : ''}</span></div>
+      {avisoColeta && <p className="mt-1 text-[10px] font-bold">{avisoColeta}</p>}
       <Titulo>SUMÁRIO DE URINA</Titulo>
       <div className="inline-flex"><Caixa>Leitura da fita química impossibilitada pela coloração da amostra.</Caixa></div>
       <div className="mt-3 grid grid-cols-2 gap-x-10">

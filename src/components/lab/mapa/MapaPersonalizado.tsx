@@ -1,4 +1,5 @@
 import { agruparPorBancada, ordenarPacientes, type MapaBancada } from '@/lib/mapaPersonalizado'
+import { textoColetaAlterada } from '@/lib/coletaProgramadaAnalise'
 
 export interface MapaPersonalizadoExameView {
   sigla: string
@@ -30,6 +31,7 @@ export interface MapaPersonalizadoPaciente {
   urgente?: boolean | null
   setorLeito?: string | null
   observacoes?: string | null
+  coletasAlteradas?: string[]
   exames: MapaPersonalizadoExameView[]
 }
 
@@ -80,6 +82,11 @@ export function MapaPersonalizado({ pacientes, bancadas }: { pacientes: MapaPers
             <header className="mp-header rounded border border-black px-3 py-2 text-[11px] leading-5">
               <div className="flex flex-wrap items-baseline justify-between gap-x-4">
                 <span className="text-[13px] font-bold uppercase">{p.paciente}</span>
+                {!!p.coletasAlteradas?.length && (
+                  <span className="text-[10px] font-semibold">
+                    {textoColetaAlterada(p.coletasAlteradas[0])}{p.coletasAlteradas.length > 1 ? ` +${p.coletasAlteradas.length - 1}` : ''}
+                  </span>
+                )}
                 <span className="text-[12px] font-bold">Pedido: <span className="font-mono">{p.codigo}</span></span>
               </div>
               <div className="flex flex-wrap gap-x-5">

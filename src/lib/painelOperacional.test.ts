@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import {
-  corDoTat, alertaDoPendente, montarExames, indicadoresDoPeriodo, ordenarBacklog, valorCritico,
+  corDoTat, alertaDoPendente, montarExames, indicadoresDoPeriodo, ordenarBacklog, tatMinutos, valorCritico,
   janelaDoPeriodo, inicioDoDiaSP, type LinhaPainelRpc,
 } from './painelOperacional'
 
@@ -35,14 +35,18 @@ describe('metas de TAT', () => {
 })
 
 describe('exames do painel', () => {
-  it('descarta apoio, coleta programada no futuro e sem coleta', () => {
+  it('descarta apoio e sem coleta, mas mantém coleta futura com aviso e TAT zerado', () => {
+    const futura = new Date(AGORA + 3_600_000).toISOString()
     const ex = montarExames([
       linha({ exam_id: 'a', bancada_tipo: 'apoio' }),
-      linha({ exam_id: 'b', collected_at: new Date(AGORA + 3_600_000).toISOString() }),
+      linha({ exam_id: 'b', collected_at: futura }),
       linha({ exam_id: 'c', collected_at: null }),
       linha({ exam_id: 'd' }),
     ], AGORA, BANCADAS)
-    expect(ex.map(e => e.examId)).toEqual(['d'])
+    expect(ex.map(e => e.examId)).toEqual(['b', 'd'])
+    expect(ex[0].coletaAlteradaEm).toBe(futura)
+    expect(tatMinutos(ex[0], AGORA)).toBe(0)
+    expect(ex[1].coletaAlteradaEm).toBeNull()
   })
   it('TAT = liberação − coleta para liberados; rotina no prazo até 120 min', () => {
     const ex = montarExames([

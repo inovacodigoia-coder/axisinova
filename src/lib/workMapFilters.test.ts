@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dataLocalSaoPaulo, dentroDoPeriodo } from './workMapFilters'
+import { dataLocalSaoPaulo, dentroDoPeriodo, exameDisponivelParaMapa } from './workMapFilters'
 
 describe('dataLocalSaoPaulo', () => {
   it('usa o dia de São Paulo, não o dia UTC', () => {
@@ -11,6 +11,15 @@ describe('dataLocalSaoPaulo', () => {
   it('devolve vazio sem data válida', () => {
     expect(dataLocalSaoPaulo(undefined)).toBe('')
     expect(dataLocalSaoPaulo('nada')).toBe('')
+  })
+})
+
+describe('exameDisponivelParaMapa', () => {
+  it('mantém coleta futura e continua excluindo somente o exame cancelado', () => {
+    expect(exameDisponivelParaMapa({
+      status: 'pending', coletaProgramada: true, collectedAt: '2026-11-25T17:11:00.000Z',
+    })).toBe(true)
+    expect(exameDisponivelParaMapa({ status: 'cancelled' })).toBe(false)
   })
 })
 

@@ -65,6 +65,8 @@ export interface ExamePainel {
   situacao: SituacaoExame
   /** Aguardando nova coleta (recoleta pedida depois da última coleta). */
   aguardandoRecoleta: boolean
+  /** Data futura alterada da coleta, destacada sem iniciar o TAT. */
+  coletaAlteradaEm: string | null
 }
 
 export const SITUACAO_LABEL: Record<SituacaoExame, string> = {
@@ -80,7 +82,7 @@ const ts = (v?: string | null) => {
   return Number.isFinite(t) ? t : null
 }
 
-/** Converte as linhas do servidor; descarta exames sem coleta, de apoio ou com coleta programada no futuro. */
+/** Converte as linhas; descarta apoio/sem coleta e mantém coleta futura com aviso e TAT zerado. */
 export function montarExames(linhas: LinhaPainelRpc[], agora: number, bancadasInternas: ReadonlySet<string>): ExamePainel[] {
   const out: ExamePainel[] = []
   for (const l of linhas) {
@@ -92,7 +94,6 @@ export function montarExames(linhas: LinhaPainelRpc[], agora: number, bancadasIn
     const liberadoEm = l.result_status === 'released' ? ts(l.released_at) : null
     const aguardandoRecoleta = recoletaEm !== null && liberadoEm === null && (coletaEm === null || coletaEm < recoletaEm)
     if (coletaEm === null && recoletaEm === null) continue
-    if (coletaEm !== null && coletaEm > agora) continue
     const situacao: SituacaoExame = liberadoEm !== null ? 'liberado'
       : l.result_status === 'digitized' ? 'digitado'
       : l.result_status === 'draft' ? 'em_analise'
@@ -111,6 +112,7 @@ export function montarExames(linhas: LinhaPainelRpc[], agora: number, bancadasIn
       recoletaEm,
       situacao,
       aguardandoRecoleta,
+      coletaAlteradaEm: coletaEm !== null && coletaEm > agora ? l.collected_at : null,
     })
   }
   return out

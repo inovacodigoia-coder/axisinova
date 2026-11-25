@@ -15,6 +15,7 @@ import { MapaSumarioUrina } from '@/components/lab/MapaSumarioUrina'
 import { MapaPersonalizado, type MapaPersonalizadoPaciente } from '@/components/lab/mapa/MapaPersonalizado'
 import { useRegisters } from '@/context/RegistersContext'
 import { resolveExamWorkbench } from '@/lib/labExamWorkbench'
+import { coletasAlteradas, textoColetaAlterada } from '@/lib/coletaProgramadaAnalise'
 
 type ViewMode = 'completo' | 'exame' | 'grade' | 'urina' | 'personalizado'
 
@@ -36,6 +37,7 @@ interface MapExam {
   workbenchId?: string
   bancadaNome?: string
   coletaEm?: string
+  coletaAlterada?: boolean
   prazo?: string
 }
 
@@ -155,6 +157,7 @@ export default function LabMapaViewPage() {
             workbenchId: resolveExamWorkbench(exam, catalogList.map((c: any) => ({ id: c.id, workbenchId: c.workbench_id }))) || cat?.workbench_id || undefined,
             bancadaNome: exam.bancadaNome || exam.workbenchName || undefined,
             coletaEm: exam.collectedAt || undefined,
+            coletaAlterada: !!exam.coletaProgramada,
             prazo: exam.expectedDeliveryDate || exam.deliveryDate || order.deliveryDate || undefined,
           })
         })
@@ -206,6 +209,10 @@ export default function LabMapaViewPage() {
       urgente: o.isUrgent,
       setorLeito: leito || null,
       observacoes: o.serviceObservation || p.observacoesPaciente,
+      coletasAlteradas: coletasAlteradas(p.exams.filter(e => e.inMap).map(e => ({
+        coletaProgramada: e.coletaAlterada,
+        collectedAt: e.coletaEm,
+      }))),
       exames: p.exams.filter(e => e.inMap).map(e => ({
         sigla: e.sigla,
         nome: e.nome,
@@ -248,23 +255,34 @@ export default function LabMapaViewPage() {
     )
   }
 
-  const PatientHeader = ({ p }: { p: MapPatient }) => (
-    <div className="patient-header">
-      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] font-bold">
-        <span className="font-mono">{p.codigo}</span>
-        <span className="uppercase">{p.paciente}</span>
-        <span className="font-normal">{p.convenio}</span>
-        <span className="font-normal">{p.idade}(A){p.sexo}</span>
-        <span className="ml-auto font-normal">Entrega:{p.entrega}</span>
-      </div>
-      {(p.observacoesPaciente || p.observacoesClinicas) && (
-        <div className="patient-meta text-[10px] text-gray-500 mt-1">
-          {p.observacoesPaciente && <span className="block truncate">Obs: {p.observacoesPaciente}</span>}
-          {p.observacoesClinicas && <span className="block truncate">Obs. clínicas: {p.observacoesClinicas}</span>}
+  const PatientHeader = ({ p }: { p: MapPatient }) => {
+    const datasAlteradas = coletasAlteradas(p.exams.filter(e => e.inMap).map(e => ({
+      coletaProgramada: e.coletaAlterada,
+      collectedAt: e.coletaEm,
+    })))
+    return (
+      <div className="patient-header">
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-[12px] font-bold">
+          <span className="font-mono">{p.codigo}</span>
+          <span className="uppercase">{p.paciente}</span>
+          {datasAlteradas.length > 0 && (
+            <span className="font-semibold">
+              {textoColetaAlterada(datasAlteradas[0])}{datasAlteradas.length > 1 ? ` +${datasAlteradas.length - 1}` : ''}
+            </span>
+          )}
+          <span className="font-normal">{p.convenio}</span>
+          <span className="font-normal">{p.idade}(A){p.sexo}</span>
+          <span className="ml-auto font-normal">Entrega:{p.entrega}</span>
         </div>
-      )}
-    </div>
-  )
+        {(p.observacoesPaciente || p.observacoesClinicas) && (
+          <div className="patient-meta mt-1 text-[10px] text-muted-foreground">
+            {p.observacoesPaciente && <span className="block truncate">Obs: {p.observacoesPaciente}</span>}
+            {p.observacoesClinicas && <span className="block truncate">Obs. clínicas: {p.observacoesClinicas}</span>}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const DemaisExames = ({ p }: { p: MapPatient }) => {
     const others = p.exams.filter(e => !e.inMap)
@@ -424,7 +442,16 @@ export default function LabMapaViewPage() {
             {(() => {
               const isUrina = (e: MapExam) => /urina|eas|sum[aá]rio/i.test(`${e.nome} ${e.sigla} ${e.material}`)
               const lista = patients.filter(p => p.exams.some(e => e.inMap && isUrina(e)))
-              return (lista.length ? lista : patients).map(p => <MapaSumarioUrina key={p.id} paciente={p.paciente} codigo={p.codigo} />)
+              return (lista.length ? lista : patients).map(p => {
+                const datas = coletasAlteradas(p.exams.filter(e => e.inMap).map(e => ({
+                  coletaProgramada: e.coletaAlterada,
+                  collectedAt: e.coletaEm,
+                })))
+                const avisoColeta = datas.length
+                  ? `${textoColetaAlterada(datas[0])}${datas.length > 1 ? ` +${datas.length - 1}` : ''}`
+                  : undefined
+                return <MapaSumarioUrina key={p.id} paciente={p.paciente} codigo={p.codigo} avisoColeta={avisoColeta} />
+              })
             })()}
           </div>
         ) : view === 'exame' ? (

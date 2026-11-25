@@ -8,6 +8,15 @@
 
 const FUSO = 'America/Sao_Paulo'
 
+/** Cancelados ficam de fora; coleta com data alterada, inclusive futura, permanece no mapa. */
+export function exameDisponivelParaMapa(exame: {
+  status?: string | null
+  coletaProgramada?: boolean
+  collectedAt?: string | null
+}): boolean {
+  return String(exame.status || '').toLowerCase() !== 'cancelled'
+}
+
 /** Devolve 'YYYY-MM-DD' do fuso de São Paulo, ou '' quando não há data válida. */
 export function dataLocalSaoPaulo(iso?: string | null): string {
   if (!iso) return ''

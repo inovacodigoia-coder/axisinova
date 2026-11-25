@@ -343,4 +343,7 @@
 - [x] Mostrar ao lado do nome do paciente o aviso de coleta alterada com a data programada.
 - [x] Testar inclusão da coleta futura, preservação da coleta cancelada, busca por etiqueta e apresentação da data: 22 testes e build OK.
 - [ ] Conferir a lista e o aviso com sessão autenticada: a prévia está em /login; nenhum pedido real foi alterado.
-- [ ] Mapa de Trabalho e Painel Operacional continuam ocultando coletas futuras; aguarda decisão do usuário sobre ampliar a mesma regra.
+- [x] Mostrar coletas futuras no Mapa de Trabalho, com aviso e data ao lado do paciente, inclusive nos mapas gerados e impressos.
+- [x] Mostrar coletas futuras no Painel Operacional, com aviso e data ao lado do paciente e TAT zerado até a data chegar.
+- [x] Testar as três telas, busca por etiqueta e formatos do mapa: 45 testes e build OK; nenhum pedido real alterado.
+- [ ] Conferir as três telas com sessão autenticada: a prévia está em /login.

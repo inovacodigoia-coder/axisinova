@@ -4,15 +4,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { EmptyState } from '@/components/feedback/EmptyState'
-import { ChevronDown, Filter, ClipboardList, Plus, FileCheck2, List, ListChecks, Users } from 'lucide-react'
+import { CalendarClock, ChevronDown, Filter, ClipboardList, Plus, FileCheck2, List, ListChecks, Users } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { dentroDoPeriodo } from '@/lib/workMapFilters'
+import { dentroDoPeriodo, exameDisponivelParaMapa } from '@/lib/workMapFilters'
+import { textoColetaAlterada } from '@/lib/coletaProgramadaAnalise'
 import { useAuth } from '@/context/AuthContext'
 import { useRegisters } from '@/context/RegistersContext'
 import { useCompanyContext } from '@/context/CompanyContext'
@@ -43,6 +45,7 @@ interface MapRow {
   priority: string
   collectionPost: string
   date: string
+  collectionChangedAt: string | null
 }
 
 const semAcento = (v: string) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -114,8 +117,7 @@ export default function LabMapaPage() {
 
       ;(order.labGuides || []).forEach((guide: any, gi: number) => {
         ;(guide?.exams || []).forEach((exam: any, ei: number) => {
-          if (exam?.status === 'cancelled') return
-          if (exam?.coletaProgramada && exam?.collectedAt && new Date(exam.collectedAt).getTime() > Date.now()) return // coleta programada futura
+          if (!exameDisponivelParaMapa(exam)) return
           const key = workMapItemKey(order.id, gi, ei)
           if (included.has(key)) return // incluido_em_mapa = true
 
@@ -136,6 +138,7 @@ export default function LabMapaPage() {
             priority: exam.isUrgent || guide?.isUrgent || (order as any).isUrgent ? 'Urgente' : 'Normal',
             collectionPost: order.originName || '—',
             date: exam.collectedAt || order.registeredAt || '',
+            collectionChangedAt: exam.coletaProgramada ? exam.collectedAt || null : null,
           })
         })
       })
@@ -437,7 +440,17 @@ export default function LabMapaPage() {
                 {visibleRows.map((r, i) => (
                   <tr key={r.key} className={cn('border-t border-border', i % 2 === 1 && 'bg-muted/40')}>
                     <td className="px-3 py-2 font-mono font-bold">{r.code}</td>
-                    <td className="px-3 py-2">{r.patient}</td>
+                    <td className="px-3 py-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span>{r.patient}</span>
+                        {r.collectionChangedAt && (
+                          <Badge variant="outline" className="h-5 gap-1 border-scheduled/30 bg-scheduled/10 px-1.5 text-[9px] font-bold text-scheduled">
+                            <CalendarClock className="h-3 w-3" />
+                            {textoColetaAlterada(r.collectionChangedAt)}
+                          </Badge>
+                        )}
+                      </div>
+                    </td>
                     <td className="px-3 py-2 font-semibold">{r.exam}</td>
                     <td className="px-3 py-2">{r.sector}</td>
                     <td className="px-3 py-2">{r.convenio}</td>

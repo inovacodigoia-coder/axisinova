@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { toast } from 'sonner'
 import {
-  Activity, AlertTriangle, ArrowDown, ArrowUp, BellRing, ChevronDown, ChevronRight, Clock, Lock, Printer, RefreshCcw, Siren,
+  Activity, AlertTriangle, ArrowDown, ArrowUp, BellRing, CalendarClock, ChevronDown, ChevronRight, Clock, Lock, Printer, RefreshCcw, Siren,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -23,6 +23,7 @@ import {
   ordenarBacklog, pendente, SITUACAO_LABEL, tatMinutos, valorCritico,
   type Cor, type ExamePainel, type PeriodoPainel,
 } from '@/lib/painelOperacional'
+import { textoColetaAlterada } from '@/lib/coletaProgramadaAnalise'
 
 const PERIODOS: { value: PeriodoPainel; label: string }[] = [
   { value: 'hoje', label: 'Hoje' },
@@ -121,7 +122,17 @@ function TabelaExames({ exames, agora, nomeBancada, mostrarDivisor = true }: { e
                   : <span className="text-muted-foreground">— Rotina</span>}
               </td>
               <td className="px-2 py-2 font-mono text-xs">{e.protocolo}</td>
-              <td className="px-2 py-2 font-medium">{e.paciente}</td>
+              <td className="px-2 py-2 font-medium">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span>{e.paciente}</span>
+                  {e.coletaAlteradaEm && (
+                    <Badge variant="outline" className="h-5 gap-1 border-scheduled/30 bg-scheduled/10 px-1.5 text-[9px] font-bold text-scheduled">
+                      <CalendarClock className="h-3 w-3" />
+                      {textoColetaAlterada(e.coletaAlteradaEm)}
+                    </Badge>
+                  )}
+                </div>
+              </td>
               <td className="px-2 py-2">{nomeBancada(e.bancadaId)}</td>
               <td className="px-2 py-2">{e.exame}</td>
               <td className="px-2 py-2 whitespace-nowrap">{SITUACAO_LABEL[e.situacao]}</td>
