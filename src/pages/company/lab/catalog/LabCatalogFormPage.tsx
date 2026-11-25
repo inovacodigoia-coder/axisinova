@@ -389,6 +389,12 @@ export default function LabCatalogFormPage() {
           // If editing, we might need to handle deletions or just refresh all
           // For safety in this complex wizard, we'll ensure parameters match the current state
           
+          // Parâmetros excluídos na tela também saem da tabela espelho.
+          const nomesNaTela = new Set(parameters.map((p: any) => String(p.name || '').trim().toLowerCase()))
+          const { data: atuais } = await supabase.from('lab_exam_parameters').select('id, name').eq('exam_id', examId)
+          const sobrando = (atuais || []).filter((a: any) => !nomesNaTela.has(String(a.name || '').trim().toLowerCase())).map((a: any) => a.id)
+          if (sobrando.length > 0) await supabase.from('lab_exam_parameters').delete().in('id', sobrando)
+
           // Upsert parameters
           for (const [paramIndex, param] of parameters.entries()) {
             const paramPayload = {
