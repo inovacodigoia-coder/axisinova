@@ -215,7 +215,8 @@ export default function LabAnalisePage() {
           originName: order.originName,
           doctorName: (guide as any)?.doctorName || order.doctorName || order.requestingDoctor,
           doctorCRM: (guide as any)?.doctorCRM || (guide as any)?.doctorCrm || order.doctorCRM,
-          status: e.status || 'pending'
+          status: e.status || 'pending',
+          orderStatus: order.status,
         }))
       );
       
@@ -288,7 +289,10 @@ export default function LabAnalisePage() {
 
       // Busca pela etiqueta encontra o pedido de qualquer data carregada
       let matchesPeriod = true;
-      if (etiquetaBusca || etiquetaPedido) {
+      // Pendentes (coletado/em análise/validação/liberado) aparecem de qualquer data;
+      // o período só limita os concluídos.
+      const pedidoPendente = !['completed', 'concluded'].includes(String(exam.orderStatus || ''));
+      if (etiquetaBusca || etiquetaPedido || pedidoPendente) {
         matchesPeriod = true;
       } else if (!examDate) {
         matchesPeriod = period === 'todos';
