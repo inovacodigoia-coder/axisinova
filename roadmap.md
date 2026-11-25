@@ -324,3 +324,9 @@
 - [x] Pesquisar e conferir os códigos SIGTAP no UniSUS; 11 exames ficaram sem código por não haver correspondência vigente segura: ALB, COLF, UROC, TTLA, COAG, PSA1, CHIK, COVI, COV, COVM e PH.
 - [x] Atualizar 48 SIGTAP e inserir 55 exames com seus laudos L001, sem preços e com prazos do PDF somente nos novos; nenhuma outra empresa alterada.
 - [x] Reler e validar: 126 exames laboratoriais, 95 com SIGTAP, zero divergências nas 48 atualizações, zero duplicações nos 55 novos, zero preços criados e build OK.
+
+# Catálogo LabSaúde — reunir exames das demais empresas
+- [x] Inventariar 522 exames laboratoriais ativos e inativos de outras 9 empresas, excluindo o exame fictício da empresa teste; cruzar código interno e nome sem acentos/pontuação.
+- [x] Auditar equivalências clínicas, códigos reaproveitados com nomes diferentes, bancadas, materiais, laudos e referências; os quatro inativos das outras empresas já existiam na LabSaúde.
+- [x] Copiar somente dois exames realmente ausentes: TOTG2 (Curva Glicêmica de 2 Dosagens, Bioquímica) e HEMOA (Hemocultura Automatizada, Pardini), cada um com seu laudo; não copiar preços nem alterar existentes.
+- [x] Validar TOTG2 com 2 parâmetros, 8 referências, TUSS 40301627 e SIGTAP 0202010040; HEMOA com laudo da bancada de apoio; 128 exames laboratoriais ativos, zero duplicações nos novos e zero preços copiados.
