@@ -243,6 +243,7 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
   const [badgeCode, setBadgeCode] = useState('')
   const [restrictOrigins, setRestrictOrigins] = useState(false)
   const [selectedOriginIds, setSelectedOriginIds] = useState<string[]>([])
+  const [hiddenFields, setHiddenFields] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [sendingReset, setSendingReset] = useState(false)
   const [manualOpen, setManualOpen] = useState(false)
@@ -282,6 +283,7 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
       setBadgeCode(profile.badge_code || '')
       setRestrictOrigins(false)
       setSelectedOriginIds([])
+      setHiddenFields([])
       setCreatingRole(false)
       setNewRoleName('')
       setCustomRoles([])
@@ -292,6 +294,7 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
     if (!profile || originRestriction.loading || originRestriction.error) return
     setRestrictOrigins(originRestriction.enabled)
     setSelectedOriginIds(originRestriction.originIds)
+    setHiddenFields(originRestriction.hiddenFields)
   }, [profile?.id, originRestriction.loading, originRestriction.error, originRestriction.enabled, originRestriction.originIds])
 
   useEffect(() => {
@@ -354,6 +357,7 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
       _user_id: profile.id,
       _enabled: restrictOrigins,
       _origin_ids: selectedOriginIds,
+      _hidden_fields: restrictOrigins ? hiddenFields : [],
     })
     setSaving(false)
 
@@ -726,6 +730,20 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
                     ))}
                   </div>
                 )}
+                <div className="space-y-2 border-t border-primary/20 pt-3">
+                  <p className="text-sm font-semibold text-foreground">Ocultar na tela inicial</p>
+                  {[{ id: 'busca_global', label: 'Busca do topo (pacientes, guias, médicos)' }, { id: 'unidade', label: 'Botão da unidade/origem no topo' }].map(campo => (
+                    <label key={campo.id} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-primary"
+                        checked={hiddenFields.includes(campo.id)}
+                        onChange={event => setHiddenFields(current => event.target.checked ? [...current, campo.id] : current.filter(id => id !== campo.id))}
+                      />
+                      {campo.label}
+                    </label>
+                  ))}
+                </div>
                 <p className="text-xs font-medium text-primary">
                   {selectedOriginIds.length} origem{selectedOriginIds.length === 1 ? '' : 's'} selecionada{selectedOriginIds.length === 1 ? '' : 's'}
                 </p>

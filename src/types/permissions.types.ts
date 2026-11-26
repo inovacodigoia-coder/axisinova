@@ -176,6 +176,7 @@ export const TRIAGEM_PERMISSIONS: { code: string; label: string; description: st
 /** Permissões de coleta (permissions.coleta; checadas no banco por coleta_tem_permissao) */
 export const COLETA_PERMISSIONS: { code: string; label: string; description: string }[] = [
   { code: 'coleta.programar', label: 'Programar coleta para data futura', description: 'Definir no Detalhes do Atendimento uma data futura de coleta, com justificativa' },
+  { code: 'coleta.previsao', label: 'Alterar Previsão de Entrega', description: 'Mudar a Previsão de Entrega no Cadastro de Atendimento' },
 ]
 
 /** Permissões do Setor Técnico (permissions.lab; checadas no banco por lab_painel_tem_permissao / lab_relatorios_tem_permissao; administrador tem todas) */

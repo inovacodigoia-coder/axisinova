@@ -11047,6 +11047,7 @@ export type Database = {
           company_id: string
           created_at: string
           enabled: boolean
+          hidden_fields: string[]
           origin_ids: string[]
           updated_at: string
           user_id: string
@@ -11055,6 +11056,7 @@ export type Database = {
           company_id: string
           created_at?: string
           enabled?: boolean
+          hidden_fields?: string[]
           origin_ids?: string[]
           updated_at?: string
           user_id: string
@@ -11063,6 +11065,7 @@ export type Database = {
           company_id?: string
           created_at?: string
           enabled?: boolean
+          hidden_fields?: string[]
           origin_ids?: string[]
           updated_at?: string
           user_id?: string
@@ -15146,7 +15149,12 @@ export type Database = {
       triagem_semear_padroes: { Args: never; Returns: undefined }
       triagem_tem_permissao: { Args: { _perm: string }; Returns: boolean }
       usuario_origens_restricao_salvar: {
-        Args: { _enabled: boolean; _origin_ids: string[]; _user_id: string }
+        Args: {
+          _enabled: boolean
+          _hidden_fields?: string[]
+          _origin_ids: string[]
+          _user_id: string
+        }
         Returns: undefined
       }
       usuario_provisionar: {

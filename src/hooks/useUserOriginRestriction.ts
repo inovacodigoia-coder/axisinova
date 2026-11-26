@@ -8,6 +8,8 @@ export interface UserOriginRestrictionState {
   error: string | null
   enabled: boolean
   originIds: string[]
+  /** Campos do topo escondidos quando a restrição está ativa */
+  hiddenFields: string[]
   reload: () => Promise<void>
 }
 
@@ -17,6 +19,7 @@ export function useUserOriginRestriction(userId?: string | null, active = true):
   const [error, setError] = useState<string | null>(null)
   const [enabled, setEnabled] = useState(false)
   const [originIds, setOriginIds] = useState<string[]>(SEM_ORIGENS)
+  const [hiddenFields, setHiddenFields] = useState<string[]>(SEM_ORIGENS)
 
   const reload = useCallback(async () => {
     if (!active || !userId) {
@@ -31,7 +34,7 @@ export function useUserOriginRestriction(userId?: string | null, active = true):
     setError(null)
     const { data, error: queryError } = await supabase
       .from('user_attendance_origin_restrictions')
-      .select('enabled, origin_ids')
+      .select('enabled, origin_ids, hidden_fields')
       .eq('user_id', userId)
       .maybeSingle()
 
@@ -42,6 +45,7 @@ export function useUserOriginRestriction(userId?: string | null, active = true):
     } else {
       setEnabled(data?.enabled === true)
       setOriginIds(data?.origin_ids ?? SEM_ORIGENS)
+      setHiddenFields((data as any)?.hidden_fields ?? SEM_ORIGENS)
     }
     setLoading(false)
   }, [active, userId])
@@ -60,7 +64,7 @@ export function useUserOriginRestriction(userId?: string | null, active = true):
     setError(null)
     void supabase
       .from('user_attendance_origin_restrictions')
-      .select('enabled, origin_ids')
+      .select('enabled, origin_ids, hidden_fields')
       .eq('user_id', userId)
       .maybeSingle()
       .then(({ data, error: queryError }) => {
@@ -72,6 +76,7 @@ export function useUserOriginRestriction(userId?: string | null, active = true):
         } else {
           setEnabled(data?.enabled === true)
           setOriginIds(data?.origin_ids ?? SEM_ORIGENS)
+      setHiddenFields((data as any)?.hidden_fields ?? SEM_ORIGENS)
         }
         setLoading(false)
       })
@@ -79,5 +84,5 @@ export function useUserOriginRestriction(userId?: string | null, active = true):
     return () => { cancelled = true }
   }, [active, userId])
 
-  return { loading, error, enabled, originIds, reload }
+  return { loading, error, enabled, originIds, hiddenFields, reload }
 }

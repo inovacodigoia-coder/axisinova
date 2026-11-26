@@ -23,6 +23,7 @@ import { SystemStatusBar } from '@/components/global/SystemStatusBar'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { Menu, Bell, Search } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
+import { useUserOriginRestriction } from '@/hooks/useUserOriginRestriction'
 import { useCompanyContext } from '@/context/CompanyContext'
 
 // Pages
@@ -171,10 +172,12 @@ function PortalContent() {
   const { unreadCount } = useNotificationContext()
   const { activeSector, activeProfile, isSessionReady, isSessionHydrated, canAccess } = useCompanyContext()
   const { open: openSearch } = useGlobalSearch()
+  const restricao = useUserOriginRestriction(user?.id)
+  const ocultar = (campo: string) => restricao.enabled && restricao.hiddenFields.includes(campo)
   const location = useLocation()
 
   useKeyboardShortcuts({
-    'ctrl+k': openSearch,
+    'ctrl+k': () => { if (!ocultar('busca_global')) openSearch() },
     'ctrl+n': () => window.location.href = '/app/agendamento',
     'ctrl+d': () => window.location.href = '/app/dashboard',
     'escape': () => setNotifOpen(false),
@@ -228,7 +231,7 @@ function PortalContent() {
           </div>
 
           {/* Global Search */}
-          <div className="hidden md:flex items-center gap-2 flex-1 max-w-md mx-4">
+          <div className={ocultar('busca_global') ? 'hidden' : 'hidden md:flex items-center gap-2 flex-1 max-w-md mx-4'}>
             <button
               onClick={openSearch}
               className="relative w-full flex items-center gap-2 rounded-lg border border-input bg-background pl-9 pr-4 py-2 text-sm text-muted-foreground hover:border-ring transition-colors"
@@ -247,7 +250,7 @@ function PortalContent() {
               <Bell className="h-5 w-5 text-muted-foreground" />
               <NotificationBadge count={unreadCount} animate={unreadCount > 0} />
             </button>
-            <OriginSelector />
+            {!ocultar('unidade') && <OriginSelector />}
             <UserMenuDropdown />
           </div>
         </header>

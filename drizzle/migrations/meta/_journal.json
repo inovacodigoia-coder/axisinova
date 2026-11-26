@@ -1443,6 +1443,13 @@
       "when": 1795669958568,
       "tag": "0205_seguranca_cancelamento_e_anexo",
       "breakpoints": true
+    },
+    {
+      "idx": 206,
+      "version": "7",
+      "when": 1795717630353,
+      "tag": "0206_ocultar_campos_restricao_origem",
+      "breakpoints": true
     }
   ]
 }

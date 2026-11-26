@@ -134,11 +134,15 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   const [coletaAntes, setColetaAntes] = useState('');
   const [aplicarTodos, setAplicarTodos] = useState(false);
   const [podeProgramar, setPodeProgramar] = useState(false);
+  const [podePrevisao, setPodePrevisao] = useState(false);
   useEffect(() => {
     (supabase as any).rpc('coleta_tem_permissao', { _perm: 'coleta.programar' })
       .then(({ data }: any) => setPodeProgramar(!!data));
+    (supabase as any).rpc('coleta_tem_permissao', { _perm: 'coleta.previsao' })
+      .then(({ data }: any) => setPodePrevisao(!!data));
   }, [user?.id, activeProfile?.id]);
-  const podeEditarColeta = canEditDeadline || podeProgramar;
+  const podeAlterarPrevisao = canEditDeadline || podePrevisao;
+  const podeEditarColeta = canEditDeadline || podeProgramar || podePrevisao;
 
 
   const addGuide = () => {
@@ -1117,6 +1121,8 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
                   type="datetime-local"
                   value={paraInputLocal(tempDeadline)}
                   onChange={(e) => e.target.value && setTempDeadline(new Date(e.target.value).toISOString())}
+                  disabled={!podeAlterarPrevisao}
+                  title={!podeAlterarPrevisao ? 'Seu perfil não pode alterar a Previsão de Entrega' : undefined}
                   className="text-sm"
                 />
               </div>
