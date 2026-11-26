@@ -256,7 +256,7 @@ export function CompanySidebar({ mobileOpen, onMobileClose, collapsed = false, o
       if (!rolloutNavigationAllowed(item.path, almoxEnabled, activeSector?.moduleOverrides)) return false
       if (item.path === '/app/inovachat') return inovachatVisivel
       if (item.path === '/app/crm') return !!crmAcesso?.ver && permissaoEspecial('crm', ['crm.visualizar'])
-      if (item.path === '/app/chat-interno') return !!chatInterno?.ver
+      if (item.path === '/app/chat-interno') return !!chatInterno?.ver && activeSector?.moduleOverrides?.[item.path] !== false
       if (item.path === '/app/financeiro') return !!financeiro?.ver && permissaoEspecial('financeiro', ['financeiro.ver'])
       if (item.path === '/app/financeiro/caixa') {
         const acessoServidor = !!(caixaAcesso?.operar || caixaAcesso?.ver_todos || caixaAcesso?.configurar)
