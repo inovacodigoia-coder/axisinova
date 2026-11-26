@@ -9,7 +9,8 @@
 
 # Carga do banco — pedidos de atendimento
 - [x] Mapa das telas, colunas explícitas na lista, menu com contadores leves, telas que só gravam sem carregar a lista, cache 45 s (fila/digitação 10 s), Consulta de Atendimentos busca só o período; índices já existiam (nenhum criado); 3 testes + typecheck/build OK.
-- [ ] Paginação no servidor e "Hoje" padrão nas filas de coleta/digitação, mapas, painéis e relatórios: aguarda decisão do usuário (esconderia pendências de dias anteriores e mudaria os textos "Exibindo X de Y").
+- [x] Digitação: "Hoje" mostra somente exames de hoje; pendências antigas ficam em aba própria com atraso real, mapa de calor diário, filtros por bancada/origem e acesso à digitação. Atraso: data do pedido; com coleta programada, a Data Coleta informada no cadastro.
+- [ ] Paginação no servidor e "Hoje" padrão nas filas de coleta, mapas, painéis e relatórios: aguarda decisão do usuário; não aplicar às pendências antigas da Digitação.
 - [ ] Conferir telas logado: sem sessão autorizada nesta conversa.
 
 # Verificação dos alertas

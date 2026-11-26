@@ -19,7 +19,6 @@ import {
   Check,
   Download,
   ShieldCheck,
-  Construction,
   Filter,
   ChevronDown,
   Calendar as CalendarIcon,
@@ -53,20 +52,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { matchesExamWorkbench, resolveExamWorkbench } from '@/lib/labExamWorkbench';
-import { indiceDeEtiquetas, pedidosDaEtiqueta } from '@/lib/buscaEtiqueta';
+import { matchesExamWorkbench } from '@/lib/labExamWorkbench';
+import { buscaSoNumeros, indiceDeEtiquetas, pedidosDaEtiqueta } from '@/lib/buscaEtiqueta';
 import { useCompanySequenceId } from '@/hooks/useCompanySequenceId';
-import { coletasAlteradas, exameDisponivelParaAnalise, textoColetaAlterada } from '@/lib/coletaProgramadaAnalise';
-
-/** Converte string de data para Date no fuso local (evita deslocamento de 1 dia em datas "YYYY-MM-DD"). */
-function parseLocalDate(value?: string | Date | null): Date | null {
-  if (!value) return null;
-  if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
-  if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
-  const d = new Date(value);
-  return isNaN(d.getTime()) ? null : d;
-}
+import { coletasAlteradas, textoColetaAlterada } from '@/lib/coletaProgramadaAnalise';
+import { achatarExamesAnalise, dataEstaNoPeriodo, pendenciasDeDiasAnteriores } from '@/lib/pendenciasAnalise';
+import { PendenciasAnalisePanel } from '@/components/lab/analise/PendenciasAnalisePanel';
 
 /** Converte data no formato brasileiro DD/MM/AAAA para Date no fuso local. */
 function parseBrazilianDate(value?: string | null): Date | null {
@@ -94,10 +85,6 @@ function maskBrazilianDate(value: string): string {
   return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 }
 
-function startOfDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
 const ORIGIN_SPECIAL_OPTIONS = [
   { id: '__apoio_integracao', name: 'Apoio (integração)' },
   { id: '__apoio_manual', name: 'Apoio (manual)' },
@@ -106,6 +93,7 @@ const ORIGIN_SPECIAL_OPTIONS = [
 const SUB_TABS = [
   { id: 'mapa', label: 'Mapa de Trabalho', navigateTo: '/app/lab/mapa' },
   { id: 'analise', label: 'Digitação de Resultados' },
+  { id: 'pendencias', label: 'Pendências Anteriores' },
 ];
 
 export default function LabAnalisePage() {
@@ -134,6 +122,8 @@ export default function LabAnalisePage() {
   const [originDialogOpen, setOriginDialogOpen] = useState(false);
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [entrySource, setEntrySource] = useState<'fila' | 'pendencias'>('fila');
+  const [pendingEntryIds, setPendingEntryIds] = useState<string[]>([]);
 
   // Fila: pendentes de QUALQUER data (filtro por status no servidor) + concluídos só do
   // período escolhido (o filtro de período da tela já os limitava). Busca em blocos de 1.000.
@@ -191,84 +181,22 @@ export default function LabAnalisePage() {
     setDateToInput(formatBrazilianDate(dateTo));
   }, [dateTo]);
 
-  // Filtragem de exames (Coleta Realizada)
+  // Fonte única: o período vale também para pendentes; os antigos ficam na aba própria.
+  const todosExames = useMemo(() => achatarExamesAnalise(orders as any[], catalogExams), [orders, catalogExams]);
   const filteredExams = useMemo(() => {
-    const allExams: any[] = [];
-    
-    (orders || []).forEach(order => {
-      const exams = (order.labGuides || []).flatMap(guide => 
-        (guide.exams || []).map((e: any) => ({
-          ...e,
-          workbenchId: resolveExamWorkbench(e, catalogExams),
-          // ID do catálogo (compartilhado entre pedidos) preservado separadamente
-          examId: e.examId || e.id,
-          // ID único por instância (pedido + exame) para evitar colisão de estado entre pacientes
-          id: `${order.id}:${e.examId || e.id}`,
-          orderId: order.id,
-          protocol: order.protocol,
-          patientId: (order as any).patientId,
-          patientName: order.patientName,
-          patientBirthDate: order.patientBirthDate,
-          patientGender: order.patientGender,
-          isFasting: (order as any).isFasting,
-          registeredAt: order.registeredAt,
-          collectionDate: order.updatedAt, // Assumindo updatedAt como data da coleta se status for collection_done
-          originId: order.originId,
-          originName: order.originName,
-          doctorName: (guide as any)?.doctorName || order.doctorName || order.requestingDoctor,
-          doctorCRM: (guide as any)?.doctorCRM || (guide as any)?.doctorCrm || order.doctorCRM,
-          status: e.status || 'pending',
-          orderStatus: order.status,
-        }))
-      );
-      
-      // Filtro por Status: Baseado na seleção do usuário ou todos se vazio
-      // Normaliza o legado 'concluded' para 'completed'
-      const orderStatus = order.status === ('concluded' as any) ? 'completed' : order.status;
-      // Pedidos "Aberto" (sem coleta realizada) e "Excluídos" não entram na fila de digitação
-      const allowedOrderStatuses = ['collection_done', 'in_analysis', 'validation', 'released', 'completed'];
-      
-      if ((order.status as any) === 'deleted') return;
-      
-      exams.forEach(exam => {
-        // Verifica se o status do pedido está entre os selecionados
-        const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(orderStatus);
-
-        // Amostra cancelada (volta para Pendente) sai da fila de digitação.
-        // Só reaparece quando a coleta for confirmada novamente.
-        // Coleta cancelada marca explicitamente collected = false; nesse caso o exame sai da fila.
-        // Caso contrário, considera as marcações próprias OU a coleta confirmada no pedido.
-        const orderCollected = allowedOrderStatuses.includes(orderStatus);
-        // Coleta com data alterada permanece na Análise, inclusive quando futura;
-        // coleta cancelada/ausente continua fora, salvo exame já digitado/liberado.
-        if (!exameDisponivelParaAnalise(exam, orderCollected)) return;
-
-        // Se o status do pedido estiver permitido e bater com o filtro selecionado
-        if (allowedOrderStatuses.includes(orderStatus) && matchesStatus) {
-          allExams.push(exam);
-        }
-      });
-
-    });
-
     const etiquetaBusca = search.trim() ? pedidosDaEtiqueta(indiceEtiquetas, search) : null;
     const etiquetaPedido = protocolSearch.trim() ? pedidosDaEtiqueta(indiceEtiquetas, protocolSearch) : null;
-    return allExams.filter(exam => {
+    return todosExames.filter(exam => {
+      const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(exam.orderStatus || '');
       const matchesSearch = etiquetaBusca
         ? etiquetaBusca.has(exam.orderId)
         : String(exam.patientName || '').toLowerCase().includes(search.toLowerCase()) ||
           String(exam.protocol || '').includes(search);
-      
       const matchesProtocol = etiquetaPedido
         ? etiquetaPedido.has(exam.orderId)
         : protocolSearch === '' || String(exam.protocol || '').includes(protocolSearch);
-      
-      // Filtro de Bancada: Deve filtrar exames individuais, mas a lista principal
-      // é agrupada por paciente. O filtro de bancada afeta quais exames aparecem
-      // dentro do grupo do paciente.
       const matchesWorkbench = matchesExamWorkbench(exam, selectedWorkbenches);
-      
-      // Filtro de Origem
+
       const apoioModo = apoioModos[`${exam.orderId}:${exam.examId}`];
       const origensReais = selectedEstablishments.filter(o => !o.startsWith('__apoio'));
       const querApoioInt = selectedEstablishments.includes('__apoio_integracao');
@@ -278,50 +206,17 @@ export default function LabAnalisePage() {
         (!(querApoioInt || querApoioMan) || (!!apoioModo && ((querApoioInt && apoioModo.modo !== 'manual') || (querApoioMan && apoioModo.modo === 'manual'))))
       );
 
-      // Filtro de Período baseado na data de atendimento (registeredAt)
-      const examDate = parseLocalDate(exam.registeredAt);
-
-      // Busca pela etiqueta encontra o pedido de qualquer data carregada
-      let matchesPeriod = true;
-      // Pendentes (coletado/em análise/validação/liberado) aparecem de qualquer data;
-      // o período só limita os concluídos.
-      const pedidoPendente = !['completed', 'concluded'].includes(String(exam.orderStatus || ''));
-      if (etiquetaBusca || etiquetaPedido || pedidoPendente) {
-        matchesPeriod = true;
-      } else if (!examDate) {
-        matchesPeriod = period === 'todos';
-      } else {
-        const examDay = startOfDay(examDate);
-        const today = startOfDay(new Date());
-
-        if (period === 'hoje') {
-          matchesPeriod = examDay.getTime() === today.getTime();
-        } else if (period === '7d') {
-          const from = new Date(today);
-          from.setDate(from.getDate() - 6);
-          matchesPeriod = examDay >= from && examDay <= today;
-        } else if (period === '30d') {
-          const from = new Date(today);
-          from.setDate(from.getDate() - 29);
-          matchesPeriod = examDay >= from && examDay <= today;
-        } else if (period === 'este-mes') {
-          matchesPeriod = examDay.getMonth() === today.getMonth() && examDay.getFullYear() === today.getFullYear();
-        } else if (period === 'mes-passado') {
-          const firstDayThisMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-          const lastDayPrevMonth = new Date(firstDayThisMonth.getTime() - 1);
-          const firstDayPrevMonth = new Date(lastDayPrevMonth.getFullYear(), lastDayPrevMonth.getMonth(), 1);
-          matchesPeriod = examDay >= firstDayPrevMonth && examDay <= lastDayPrevMonth;
-        } else if (period === 'custom' && (dateFrom || dateTo)) {
-          const from = dateFrom ? startOfDay(dateFrom) : null;
-          const to = dateTo ? startOfDay(dateTo) : null;
-          matchesPeriod = (!from || examDay >= from) && (!to || examDay <= to);
-        }
-      }
-
-
-      return matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin && matchesPeriod;
+      // Busca explícita por pedido/etiqueta continua encontrando qualquer pendência carregada.
+      const buscaDireta = !!(etiquetaBusca || etiquetaPedido) || buscaSoNumeros(search.trim()) || protocolSearch.trim().length > 0;
+      const matchesPeriod = buscaDireta || dataEstaNoPeriodo(exam.registeredAt, period, dateFrom, dateTo);
+      return matchesStatus && matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin && matchesPeriod;
     });
-  }, [orders, catalogExams, apoioModos, search, protocolSearch, selectedWorkbenches, selectedEstablishments, selectedStatuses, period, dateFrom, dateTo, indiceEtiquetas]);
+  }, [todosExames, apoioModos, search, protocolSearch, selectedWorkbenches, selectedEstablishments, selectedStatuses, period, dateFrom, dateTo, indiceEtiquetas]);
+  const pendenciasAnteriores = useMemo(() => pendenciasDeDiasAnteriores(todosExames), [todosExames]);
+  const pendingEntryExams = useMemo(() => {
+    const ids = new Set(pendingEntryIds);
+    return todosExames.filter(exam => ids.has(exam.id));
+  }, [todosExames, pendingEntryIds]);
 
   // Agrupamento por protocolo para a lista lateral
   const groupedExams = useMemo(() => {
@@ -403,6 +298,11 @@ export default function LabAnalisePage() {
                 )}
               >
                 {tab.label}
+                {tab.id === 'pendencias' && pendenciasAnteriores.length > 0 && (
+                  <Badge variant="destructive" className="ml-1 h-5 min-w-5 px-1.5 text-[9px] normal-case tracking-normal">
+                    {pendenciasAnteriores.length}
+                  </Badge>
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -413,7 +313,18 @@ export default function LabAnalisePage() {
         <Tabs value={activeTab} className="h-full">
           {SUB_TABS.filter(tab => !tab.navigateTo).map(tab => (
             <TabsContent key={tab.id} value={tab.id} className="h-full m-0">
-              {tab.id === 'analise' ? (
+              {tab.id === 'pendencias' ? (
+                <PendenciasAnalisePanel
+                  exams={pendenciasAnteriores}
+                  workbenches={workbenches.map(wb => ({ id: wb.id, name: wb.name }))}
+                  origins={establishments.map(est => ({ id: est.id, name: est.name }))}
+                  onDigitar={(exams) => {
+                    setPendingEntryIds(exams.map(exam => exam.id));
+                    setEntrySource('pendencias');
+                    setIsResultModalOpen(true);
+                  }}
+                />
+              ) : (
                 <div className="flex h-full gap-4">
                   {/* Fila Lateral e Painel de Filtros */}
                   <div className="w-[380px] flex flex-col gap-4">
@@ -634,7 +545,7 @@ export default function LabAnalisePage() {
                       </div>
 
                       <div className="pt-2 border-t flex justify-between items-center text-[10px] font-bold text-muted-foreground">
-                        <span>EXIBINDO {filteredExams.length} DE {orders.reduce((acc, o) => acc + (o.labGuides || []).reduce((acc2, g) => acc2 + (g.exams || []).length, 0), 0)} EXAMES</span>
+                        <span>EXIBINDO {filteredExams.length} EXAMES NO PERÍODO · {pendenciasAnteriores.length} PENDÊNCIAS ANTIGAS NA ABA AO LADO</span>
                       </div>
                     </Card>
 
@@ -670,7 +581,7 @@ export default function LabAnalisePage() {
                         </div>
                         <div className="flex gap-2">
                           <Button 
-                            onClick={() => setIsResultModalOpen(true)}
+                            onClick={() => { setEntrySource('fila'); setIsResultModalOpen(true); }}
                             className="h-9 gap-1 px-4 text-[10px] font-black uppercase tracking-widest gradient-bg text-white border-none shadow-md hover:shadow-primary/20 transition-all active:scale-95"
                           >
                             <Beaker className="h-3.5 w-3.5" /> Digitação
@@ -693,8 +604,8 @@ export default function LabAnalisePage() {
                           ) : groupedExams.length === 0 ? (
                             <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
                               <Beaker className="h-12 w-12 text-muted-foreground/30 mb-4" />
-                              <h3 className="text-sm font-bold">Nenhum exame pendente</h3>
-                              <p className="text-xs text-muted-foreground mt-1">Verifique os filtros ou aguarde novas coletas.</p>
+                              <h3 className="text-sm font-bold">Nenhum exame neste período</h3>
+                              <p className="text-xs text-muted-foreground mt-1">Consulte a aba Pendências Anteriores para ver os exames de dias anteriores.</p>
                               {isFiltered && (
                                 <Button variant="link" size="sm" onClick={clearFilters} className="mt-2 text-xs">Limpar filtros aplicados</Button>
                               )}
@@ -794,19 +705,6 @@ export default function LabAnalisePage() {
                     </Card>
                   </div>
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-full bg-card rounded-2xl border border-border p-12 text-center shadow-sm">
-                  <div className="h-24 w-24 rounded-full bg-primary/5 flex items-center justify-center mb-6">
-                    <Construction className="h-12 w-12 text-primary/40" />
-                  </div>
-                  <h3 className="text-2xl font-black uppercase tracking-tight">{tab.label}</h3>
-                  <p className="text-muted-foreground max-w-md mt-4 text-sm leading-relaxed">
-                    Esta funcionalidade está sendo implementada para o ciclo laboratorial e será liberada em breve em uma próxima etapa do sistema Axis Inova.
-                  </p>
-                  <Button variant="outline" className="mt-8 gap-2 font-bold uppercase text-[10px] h-10 px-6 border-primary/20 hover:bg-primary/5 hover:text-primary transition-all">
-                    Acompanhar Roadmap
-                  </Button>
-                </div>
               )}
             </TabsContent>
           ))}
@@ -815,9 +713,15 @@ export default function LabAnalisePage() {
       
       <ResultEntryModal 
         isOpen={isResultModalOpen}
-        onClose={() => { setIsResultModalOpen(false); void refreshOrders(); }}
-        filteredExams={examsForEntry}
-        filters={{
+        onClose={() => { setIsResultModalOpen(false); setEntrySource('fila'); void refreshOrders(); }}
+        filteredExams={entrySource === 'pendencias' ? pendingEntryExams : examsForEntry}
+        filters={entrySource === 'pendencias' ? {
+          period: 'Pendências anteriores',
+          workbenches: [],
+          establishments: [],
+          protocol: '',
+          statuses: [],
+        } : {
           period,
           workbenches: selectedWorkbenches,
           establishments: selectedEstablishments,
@@ -826,7 +730,7 @@ export default function LabAnalisePage() {
         }}
         workbenchNames={workbenches.reduce((acc, wb) => ({ ...acc, [wb.id]: wb.name }), {})}
         establishmentNames={establishments.reduce((acc, est) => ({ ...acc, [est.id]: est.name }), {})}
-        onOpenFilters={() => setQuickFiltersOpen(true)}
+        onOpenFilters={entrySource === 'fila' ? () => setQuickFiltersOpen(true) : undefined}
         refreshData={() => {
           setLoading(true);
           refreshOrders().finally(() => setLoading(false));

@@ -1815,6 +1815,7 @@ export function ResultEntryModal({
               variant="ghost"
               size="icon"
               onClick={() => onOpenFilters?.()}
+              disabled={!onOpenFilters}
               title="Alterar filtros"
               aria-label="Alterar filtros"
               className="h-9 w-9 rounded-lg hover:bg-primary/10 hover:text-primary"
