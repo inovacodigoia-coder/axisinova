@@ -56,10 +56,15 @@ Deno.serve(async (req) => {
       // Company is only resolved from a verified session token, never from the body.
       let companyId: string | null = null;
       const authHeader = req.headers.get("Authorization");
-      if (success && authHeader?.startsWith("Bearer ")) {
-        const token = authHeader.slice(7);
-        const { data: userData } = await admin.auth.getUser(token);
-        if (userData?.user) {
+      if (success) {
+        // Um sucesso só é aceito com a sessão real do próprio usuário do identificador.
+        const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : "";
+        const { data: userData } = token ? await admin.auth.getUser(token) : { data: null };
+        const email = String(userData?.user?.email ?? "").toLowerCase();
+        if (!userData?.user || email !== identifier) {
+          return json({ error: "Não autorizado" }, 401);
+        }
+        {
           const { data: profile } = await admin
             .from("profiles")
             .select("company_id")

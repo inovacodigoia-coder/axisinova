@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify'
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
@@ -169,7 +170,7 @@ function PortalLaudoModal({ laudos, onClose }: { laudos: PortalLaudo[]; onClose:
     const body = window.document.body
     const root = window.document.createElement('div')
     root.id = 'laudo-print-root'
-    root.innerHTML = docRef.current.innerHTML
+    root.innerHTML = DOMPurify.sanitize(docRef.current.innerHTML)
     body.appendChild(root)
     body.classList.add('printing-laudo')
     let done = false

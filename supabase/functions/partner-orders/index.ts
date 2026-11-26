@@ -381,7 +381,12 @@ async function createOrder(req: Request, supabase: any, companyId: string, partn
         attendance_order_id: null,
         status: 'received',
         payload: {
-          ...body,
+          // Só os campos conhecidos do pedido são guardados; chaves extras do parceiro são descartadas
+          ...Object.fromEntries(
+            ['paciente', 'patient', 'convenio', 'insurance', 'exames', 'exams', 'medico_solicitante', 'requesting_doctor', 'atendimento', 'protocolo_parceiro']
+              .filter((k) => (body as Record<string, unknown>)?.[k] !== undefined)
+              .map((k) => [k, (body as Record<string, unknown>)[k]]),
+          ),
           _resolved: {
             patientExisted,
             doctorName: doctorName || null,

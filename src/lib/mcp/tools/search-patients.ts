@@ -14,10 +14,11 @@ export default defineTool({
   handler: async ({ query, limit }, ctx) => {
     if (!ctx.isAuthenticated()) throw new ToolError("Usuário não autenticado");
     const supabase = supabaseForUser(ctx);
+    const termo = query.replace(/[^\p{L}\p{N} @._-]/gu, "").slice(0, 100);
     const digits = query.replace(/\D/g, "");
     const filter = digits.length >= 3
-      ? `cpf.ilike.%${digits}%,name.ilike.%${query}%`
-      : `name.ilike.%${query}%`;
+      ? `cpf.ilike.%${digits}%,name.ilike.%${termo}%`
+      : `name.ilike.%${termo}%`;
 
     const { data, error } = await supabase
       .from("patients")

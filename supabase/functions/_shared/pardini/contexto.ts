@@ -37,6 +37,12 @@ const LAB_COLS = 'id, company_id, nome, cod_lab, endpoint_url, opcoes, modo_cont
 export async function carregarCtx(admin: any, apoioId: string): Promise<Ctx> {
   const { data: lab, error } = await admin.from('apoio_laboratorio').select(LAB_COLS).eq('id', apoioId).single()
   if (error || !lab) throw new Error('Laboratório de apoio não encontrado')
+  // Credenciais só podem ir para o endereço oficial do Pardini (evita envio da senha a outro servidor)
+  let host = ''
+  try { const u = new URL(String(lab.endpoint_url ?? '')); host = u.protocol === 'https:' ? u.hostname.toLowerCase() : '' } catch { host = '' }
+  if (!(host === 'hermespardini.com.br' || host.endsWith('.hermespardini.com.br'))) {
+    throw new Error('Endereço do laboratório de apoio não autorizado')
+  }
   const senha = await lerSenha(admin, apoioId)
   if (!senha) throw new Error('Senha do conector não cadastrada')
   return { admin, lab: lab as Lab, senha: senha as string }

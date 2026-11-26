@@ -457,11 +457,13 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
                   className="h-7 text-[10px] uppercase font-bold text-primary hover:text-primary hover:bg-primary/10"
                   onClick={() => {
                     const win = window.open('', '_blank');
+                    const esc = (v: string) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string>)[c]);
                     if (win) {
+                      win.opener = null;
                       win.document.write(`
                         <html>
                           <head>
-                            <title>Crachá - ${fullName}</title>
+                            <title>Crachá - ${esc(fullName)}</title>
                             <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+39&display=swap" rel="stylesheet">
                             <style>
                               body { 
@@ -512,8 +514,8 @@ function EditUserModal({ profile, extraRoles = [], onClose, onSaved }: { profile
                           </head>
                           <body>
                             <div class="card">
-                              <div class="name">${fullName}</div>
-                              <div class="barcode">*${badgeCode}*</div>
+                              <div class="name">${esc(fullName)}</div>
+                              <div class="barcode">*${esc(badgeCode)}*</div>
                               <div class="footer">Axis Inova - LabSaúde</div>
                             </div>
                             <button class="no-print" style="margin-top: 25px; padding: 10px 20px; cursor: pointer; background: #00D4FF; border: none; color: white; border-radius: 6px; font-weight: bold;" onclick="window.print()">Imprimir</button>

@@ -71,8 +71,9 @@ var search_patients_default = defineTool({
   handler: async ({ query, limit }, ctx) => {
     if (!ctx.isAuthenticated()) throw new ToolError("Usu\xE1rio n\xE3o autenticado");
     const supabase = supabaseForUser(ctx);
+    const termo = query.replace(/[^\p{L}\p{N} @._-]/gu, "").slice(0, 100);
     const digits = query.replace(/\D/g, "");
-    const filter = digits.length >= 3 ? `cpf.ilike.%${digits}%,name.ilike.%${query}%` : `name.ilike.%${query}%`;
+    const filter = digits.length >= 3 ? `cpf.ilike.%${digits}%,name.ilike.%${termo}%` : `name.ilike.%${termo}%`;
     const { data, error } = await supabase.from("patients").select("id, name, cpf, birth_date, gender, phone, email, status, sequence_id").or(filter).order("name").limit(limit ?? 10);
     if (error) throw new ToolError(error.message);
     const patients = (data ?? []).map((p) => ({
@@ -189,7 +190,7 @@ var list_exam_catalog_default = defineTool4({
     const supabase = supabaseForUser(ctx);
     let q = supabase.from("exams").select("id, name, internal_code, tuss_code, type, measurement_unit, result_deadline_days, is_active").order("name").limit(limit ?? 20);
     if (only_active !== false) q = q.eq("is_active", true);
-    if (query) q = q.or(`name.ilike.%${query}%,internal_code.ilike.%${query}%`);
+    if (query) q = q.or(`name.ilike.%${String(query).replace(/[^\p{L}\p{N} @._-]/gu, "").slice(0, 100)}%,internal_code.ilike.%${String(query).replace(/[^\p{L}\p{N} @._-]/gu, "").slice(0, 100)}%`);
     const { data, error } = await q;
     if (error) throw new ToolError4(error.message);
     const exams = (data ?? []).map((e) => ({

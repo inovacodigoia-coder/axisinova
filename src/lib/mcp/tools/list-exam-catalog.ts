@@ -23,7 +23,7 @@ export default defineTool({
       .limit(limit ?? 20);
 
     if (only_active !== false) q = q.eq("is_active", true);
-    if (query) q = q.or(`name.ilike.%${query}%,internal_code.ilike.%${query}%`);
+    if (query) q = q.or(`name.ilike.%${String(query).replace(/[^\p{L}\p{N} @._-]/gu, "").slice(0, 100)}%,internal_code.ilike.%${String(query).replace(/[^\p{L}\p{N} @._-]/gu, "").slice(0, 100)}%`);
 
     const { data, error } = await q;
     if (error) throw new ToolError(error.message);

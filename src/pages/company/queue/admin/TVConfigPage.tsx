@@ -194,6 +194,12 @@ export default function TVConfigPage() {
     const next = selectedTv.mediaAttachments.filter(m => m.id !== attachmentId)
     dispatch({ type: 'UPDATE_TV', payload: { ...selectedTv, mediaAttachments: next } })
     await persistTvMedia(selectedTv, next)
+    // Apaga o arquivo para que links antigos deixem de abrir a mídia removida
+    const removed = selectedTv.mediaAttachments.find(m => m.id === attachmentId)
+    const match = removed?.fileUrl?.match(/\/object\/sign\/tv-media\/([^?]+)/)
+    if (match && !isDemoCompany) {
+      await supabase.storage.from('tv-media').remove([decodeURIComponent(match[1])])
+    }
     toast.success('Anexo removido')
   }
 

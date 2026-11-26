@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from "@/components/ui/button";
@@ -166,7 +167,7 @@ export default function PDFPreviewModal({
     }
     setSaving(true);
     try {
-      const html = documentRef.current.innerHTML;
+      const html = DOMPurify.sanitize(documentRef.current.innerHTML);
       const { error } = await supabase
         .from('lab_report_overrides')
         .upsert(
@@ -217,7 +218,7 @@ export default function PDFPreviewModal({
     const body = window.document.body;
     const root = window.document.createElement('div');
     root.id = 'laudo-print-root';
-    root.innerHTML = documentRef.current.innerHTML;
+    root.innerHTML = DOMPurify.sanitize(documentRef.current.innerHTML);
     const printStyle = window.document.createElement('style');
     printStyle.textContent = '@media print { @page { size: A4 portrait; margin: 0; } }';
     root.appendChild(printStyle);
@@ -497,7 +498,7 @@ export default function PDFPreviewModal({
                   className={cn('laudo-print-area', isEditing && 'outline outline-2 outline-amber-400 rounded-sm')}
                 >
                   {savedHtml ? (
-                    <div dangerouslySetInnerHTML={{ __html: savedHtml }} />
+                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(savedHtml) }} />
                   ) : (
                     <LaudoDocument 
                       order={enrichedOrder}

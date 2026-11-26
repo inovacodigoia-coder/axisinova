@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     return json({ resultado, mensagem, resposta })
   }
 
-  const quem = await autenticar(req, admin)
+  const quem = await autenticar(req, admin, 'apoio.remessa.cancelar')
   if (quem instanceof Response) return quem
   const ids: string[] = Array.isArray(body?.pedido_exame_ids) ? body.pedido_exame_ids.filter(uuidOk).slice(0, 200) : []
   let apoioId: string | undefined = uuidOk(body?.apoio_id) ? body.apoio_id : undefined

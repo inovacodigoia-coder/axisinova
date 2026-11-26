@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import React from 'react';
 import { linhasDoLaudo } from '@/lib/laudoParametrosOpcionais';
 import { linhasDoValor, semReferencia, valorTextoLongo } from '@/lib/laudoValorTexto';
@@ -269,7 +270,7 @@ function ExamBlock({ exam, order, equipmentTypes }: { exam: any; order?: any; eq
       {tpl?.header_html && (
         <div
           className="laudo-tpl text-[9.5px] text-zinc-700 whitespace-pre-line mt-2"
-          dangerouslySetInnerHTML={{ __html: renderLaudoTemplate(tpl.header_html, ctx) }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderLaudoTemplate(tpl.header_html, ctx)) }}
         />
       )}
       <div className="mb-3" />
@@ -308,7 +309,7 @@ function ExamBlock({ exam, order, equipmentTypes }: { exam: any; order?: any; eq
       {tpl?.footer_html && (
         <div
           className="laudo-tpl text-[9px] text-zinc-600 whitespace-pre-line mt-2"
-          dangerouslySetInnerHTML={{ __html: renderLaudoTemplate(tpl.footer_html, ctx) }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderLaudoTemplate(tpl.footer_html, ctx)) }}
         />
       )}
     </div>

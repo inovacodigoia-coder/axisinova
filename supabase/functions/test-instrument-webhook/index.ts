@@ -87,6 +87,17 @@ Deno.serve(async (req) => {
       return json({ error: 'URL inválida. Use http:// ou https://' }, 400)
     }
 
+    // Só endereços já cadastrados como webhook da própria empresa podem ser testados
+    const { data: cadastrado } = await admin
+      .from('instrument_webhooks')
+      .select('id')
+      .eq('company_id', profile.company_id)
+      .eq('url', url)
+      .limit(1)
+    if (!cadastrado?.length) {
+      return json({ error: 'Só é possível testar um webhook cadastrado nesta empresa.' }, 403)
+    }
+
     if (isBlockedHost(parsed.hostname)) {
       return json({ error: 'Destino não permitido: endereços internos ou privados são bloqueados.' }, 400)
     }

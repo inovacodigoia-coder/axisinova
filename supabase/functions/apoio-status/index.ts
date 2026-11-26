@@ -92,7 +92,7 @@ async function pendencias(ctx: Ctx) {
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
   const admin = adminClient()
-  const quem = await autenticar(req, admin)
+  const quem = await autenticar(req, admin, 'apoio.remessa.operar')
   if (quem instanceof Response) return quem
   const body = await req.json().catch(() => ({}))
   const labs = await apoiosAutomaticos(admin, uuidOk(body?.apoio_id) ? body.apoio_id : undefined, quem.companyId)
