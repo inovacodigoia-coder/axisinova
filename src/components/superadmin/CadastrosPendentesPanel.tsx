@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCircle2, Clock, Eye, MailWarning } from 'lucide-react'
+import { CheckCircle2, Clock, Eye, MailWarning, Trash2 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { mensagemErroFuncao } from '@/lib/erroFuncao'
 import { ConfirmModal } from '@/components/ui/ConfirmModal'
 
 interface CadastroPendente {
@@ -28,6 +29,25 @@ export function CadastrosPendentesPanel({ onAprovado }: { onAprovado?: () => voi
   const [lista, setLista] = useState<CadastroPendente[]>([])
   const [alvo, setAlvo] = useState<CadastroPendente | null>(null)
   const [aprovando, setAprovando] = useState(false)
+  const [excluirAlvo, setExcluirAlvo] = useState<CadastroPendente | null>(null)
+  const [excluindo, setExcluindo] = useState(false)
+
+  async function excluir() {
+    if (!excluirAlvo || excluindo) return
+    setExcluindo(true)
+    const { data, error } = await supabase.functions.invoke('delete-company', {
+      body: { companyId: excluirAlvo.company_id, apenasPendente: true },
+    })
+    setExcluindo(false)
+    if (error) {
+      toast.error(await mensagemErroFuncao(error, 'Não foi possível excluir o cadastro.', data))
+      return
+    }
+    toast.success(`Cadastro "${excluirAlvo.nome_fantasia || excluirAlvo.razao_social}" excluído.`)
+    setExcluirAlvo(null)
+    await carregar()
+    onAprovado?.()
+  }
 
   const carregar = useCallback(async () => {
     const { data, error } = await supabase.rpc('empresa_cadastros_pendentes')
@@ -95,6 +115,12 @@ export function CadastrosPendentesPanel({ onAprovado }: { onAprovado?: () => voi
                 <Eye className="h-4 w-4" /> Ver detalhes
               </button>
               <button
+                onClick={() => setExcluirAlvo(c)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-2 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" /> Excluir cadastro
+              </button>
+              <button
                 onClick={() => setAlvo(c)}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground shadow-sm transition-colors hover:bg-primary/90"
               >
@@ -114,6 +140,16 @@ export function CadastrosPendentesPanel({ onAprovado }: { onAprovado?: () => voi
         confirmLabel="Aprovar"
         variant="warning"
         isLoading={aprovando}
+      />
+      <ConfirmModal
+        open={!!excluirAlvo}
+        onClose={() => setExcluirAlvo(null)}
+        onConfirm={excluir}
+        title="Excluir cadastro aguardando aprovação"
+        description={`O cadastro "${excluirAlvo?.nome_fantasia || excluirAlvo?.razao_social}" (CNPJ ${excluirAlvo?.cnpj}) e o login do responsável serão apagados. O CNPJ e o e-mail ficam livres para um novo cadastro. Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        variant="danger"
+        isLoading={excluindo}
       />
     </section>
   )

@@ -47,12 +47,22 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { companyId } = await req.json();
+    const { companyId, apenasPendente } = await req.json();
     if (!companyId) {
       return new Response(JSON.stringify({ error: "companyId é obrigatório" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    if (apenasPendente) {
+      const { data: emp } = await supabaseAdmin.from("companies").select("status").eq("id", companyId).maybeSingle();
+      if (!emp || emp.status !== "pending") {
+        return new Response(JSON.stringify({ error: "Este cadastro não está mais aguardando aprovação" }), {
+          status: 409,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // 1. Enforce a broad cleanup of all potential related tables
