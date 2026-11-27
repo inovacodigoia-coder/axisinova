@@ -16,6 +16,7 @@ import { resolveCompanyId } from '@/utils/companyId'
 import { buildExamParams, evaluateFormula, findCatalogExam, normalizeText, type ResolvedParam } from '@/utils/examParameters'
 import { supabase } from '@/integrations/supabase/client'
 import { ajusteDiferencial3Partes } from '@/utils/ajusteDiferencial3Partes'
+import { equipamentoVisivelParaEmpresa } from '@/lib/equipamentoVisivel'
 import { differentialCell, differentialPercent, isAbsolute, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential'
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection'
 import { DesliberarExameDialog } from '@/components/lab/analise/DesliberarExameDialog'
@@ -309,15 +310,18 @@ export default function LabHematologiaPage() {
       if (!cid) return
       const { data } = await supabase
         .from('lab_equipments' as any)
-        .select('id, name, serial_number, connection_type, manufacturer, differential_type')
+        .select('id, name, serial_number, connection_type, manufacturer, differential_type, is_active, source_equipment_id')
         .eq('company_id', cid)
         .order('name')
       if (!active || !data) return
-      const hema = (data as any[]).filter((e) => /hematol/i.test(String(e.connection_type || '')))
+      // Cópias compartilhadas inativas não aparecem; aparelhos ativos vêm primeiro (o padrão nunca é um inativo)
+      const hema = (data as any[])
+        .filter((e) => /hematol/i.test(String(e.connection_type || '')) && equipamentoVisivelParaEmpresa(e))
+        .sort((x, y) => Number(y.is_active !== false) - Number(x.is_active !== false))
       setEquipments(hema)
       setEquipmentId((current) => {
         if (current && hema.some((e) => e.id === current)) return current
-        const p8000 = hema.find((e) => String(e.serial_number || '').toLowerCase() === 'p8000')
+        const p8000 = hema.find((e) => e.is_active !== false && String(e.serial_number || '').toLowerCase() === 'p8000')
         return p8000?.id || hema[0]?.id || ''
       })
     })()
@@ -560,6 +564,8 @@ export default function LabHematologiaPage() {
         if (key && row.value != null && String(row.value) !== '') {
           next[key] = String(row.value)
           if (row.source === 'instrument') { nextInstrument.add(key); raw[key] = String(row.instrument_value ?? row.value) }
+          // Estimativa 3 partes já gravada: o valor original do aparelho volta como entrada da regra
+          else if (row.source === 'estimado_3_partes' && row.instrument_value != null && String(row.instrument_value) !== '') raw[key] = String(row.instrument_value)
         }
         if (row.flag && !nextFlags.includes(row.flag)) nextFlags.push(String(row.flag))
       })

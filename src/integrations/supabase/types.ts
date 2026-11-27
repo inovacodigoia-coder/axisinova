@@ -14330,6 +14330,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      hemo3p__maior_resto: {
+        Args: { p_alvo: number; v: number[] }
+        Returns: number[]
+      }
+      hemo3p__num: { Args: { t: string }; Returns: number }
+      hemo3p_estimar: { Args: { p_result_id: string }; Returns: string }
       hospital_acompanhante_adicionar: {
         Args: { _context: string; _id: string; _nome: string }
         Returns: string
