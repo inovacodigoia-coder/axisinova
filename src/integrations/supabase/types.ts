@@ -7844,6 +7844,10 @@ export type Database = {
           company_id: string
           created_at: string | null
           email: string | null
+          hemo3p_estimativa_ativa: boolean
+          hemo3p_limite_leucocitos: number
+          hemo3p_limite_mid: number
+          hemo3p_nota_laudo: boolean
           hospital_label_config: Json
           id: string
           lab_name: string | null
@@ -7895,6 +7899,10 @@ export type Database = {
           company_id: string
           created_at?: string | null
           email?: string | null
+          hemo3p_estimativa_ativa?: boolean
+          hemo3p_limite_leucocitos?: number
+          hemo3p_limite_mid?: number
+          hemo3p_nota_laudo?: boolean
           hospital_label_config?: Json
           id?: string
           lab_name?: string | null
@@ -7946,6 +7954,10 @@ export type Database = {
           company_id?: string
           created_at?: string | null
           email?: string | null
+          hemo3p_estimativa_ativa?: boolean
+          hemo3p_limite_leucocitos?: number
+          hemo3p_limite_mid?: number
+          hemo3p_nota_laudo?: boolean
           hospital_label_config?: Json
           id?: string
           lab_name?: string | null

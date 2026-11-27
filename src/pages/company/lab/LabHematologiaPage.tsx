@@ -13,10 +13,10 @@ import { useAttendanceCadastro, FILA_TEMPO_REAL, STATUS_CONCLUIDOS } from '@/hoo
 import { useAuth } from '@/context/AuthContext'
 import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions'
 import { resolveCompanyId } from '@/utils/companyId'
-import { buildExamParams, evaluateFormula, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
+import { buildExamParams, evaluateFormula, findCatalogExam, normalizeText, type ResolvedParam } from '@/utils/examParameters'
 import { supabase } from '@/integrations/supabase/client'
-import { ajusteDiferencial3Partes, EMPRESAS_AJUSTE_3_PARTES } from '@/utils/ajusteDiferencial3Partes'
-import { differentialPercent, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential'
+import { ajusteDiferencial3Partes } from '@/utils/ajusteDiferencial3Partes'
+import { differentialCell, differentialPercent, isAbsolute, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential'
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection'
 import { DesliberarExameDialog } from '@/components/lab/analise/DesliberarExameDialog'
 import { bloqueioLiberar } from '@/lib/retesteLiberacao'
@@ -286,6 +286,17 @@ export default function LabHematologiaPage() {
   const [desliberarAberto, setDesliberarAberto] = useState(false)
   const [rawInstrumentValues, setRawInstrumentValues] = useState<Record<string, string>>({})
   const [instrumentKeys, setInstrumentKeys] = useState<Set<string>>(new Set())
+  // Valores do aparelho em parâmetros ocultos (ex.: MID e Granulócitos do contador 3 partes), por nome
+  const [ocultosAparelho, setOcultosAparelho] = useState<Record<string, string>>({})
+  const [cfg3p, setCfg3p] = useState<{ ativa: boolean; limiteLeucocitos: number; limiteMid: number }>({ ativa: false, limiteLeucocitos: 9000, limiteMid: 15 })
+  useEffect(() => {
+    const cid = resolveCompanyId(user?.companyId)
+    if (!cid) return
+    let ok = true
+    supabase.from('lab_settings').select('hemo3p_estimativa_ativa, hemo3p_limite_leucocitos, hemo3p_limite_mid').eq('company_id', cid).maybeSingle()
+      .then(({ data }: any) => { if (ok && data) setCfg3p({ ativa: !!data.hemo3p_estimativa_ativa, limiteLeucocitos: Number(data.hemo3p_limite_leucocitos) || 9000, limiteMid: Number(data.hemo3p_limite_mid) || 15 }) })
+    return () => { ok = false }
+  }, [user?.companyId])
   const [saving, setSaving] = useState(false)
   const [equipments, setEquipments] = useState<any[]>([])
   const [equipmentId, setEquipmentId] = useState<string>('')
@@ -541,8 +552,10 @@ export default function LabHematologiaPage() {
       const nextFlags: string[] = []
       const nextInstrument = new Set<string>()
       const raw: Record<string, string> = {}
+      const ocultos: Record<string, string> = {}
       ;(match.lab_result_values || []).forEach((row: any) => {
         const param = byId[String(row.parameter_key)]
+        if (!param && row.source === 'instrument' && row.parameter_name) ocultos[String(row.parameter_name)] = String(row.instrument_value ?? row.value ?? '')
         const key = param ? formKeyOfParam(param) : mapParamToFormKey(String(row.parameter_name || ''))
         if (key && row.value != null && String(row.value) !== '') {
           next[key] = String(row.value)
@@ -554,6 +567,7 @@ export default function LabHematologiaPage() {
       setFlags(nextFlags)
       setInstrumentKeys(nextInstrument)
       setRawInstrumentValues(raw)
+      setOcultosAparelho(ocultos)
       setObservacao(match.notes || '')
       setExamStatus(match.status || null)
       setResultId(match.id ? String(match.id) : null)
@@ -565,14 +579,16 @@ export default function LabHematologiaPage() {
 
   // Ajuste automático 3 partes (piloto Ielmo Marinho): entra como "valor do aparelho" da diferencial;
   // o original continua salvo em instrument_value e qualquer digitação manual pausa o ajuste.
-  const { diffInstrument, ajusteAplicado } = useMemo(() => {
+  const { diffInstrument, ajusteAplicado, midAlto, estimados } = useMemo(() => {
     const inst: Record<string, string> = Object.fromEntries(resolvedParams.filter(p => rawInstrumentValues[formKeyOfParam(p)] != null).map(p => [p.id, rawInstrumentValues[formKeyOfParam(p)]]))
-    const cid = resolveCompanyId(user?.companyId)
     const tresPartes = String(selectedEquipment?.differential_type || '').startsWith('3')
-    const ajuste = tresPartes && cid && EMPRESAS_AJUSTE_3_PARTES.includes(cid) ? ajusteDiferencial3Partes(resolvedParams, inst) : null
-    return { diffInstrument: ajuste ? { ...inst, ...ajuste } : inst, ajusteAplicado: !!ajuste }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resolvedParams, rawInstrumentValues, selectedEquipment, user?.companyId])
+    const porNome = (re: RegExp) => Object.entries(ocultosAparelho).find(([n]) => re.test(normalizeText(n)) && !/absolut/.test(normalizeText(n)))?.[1]
+    const r = tresPartes && cfg3p.ativa
+      ? ajusteDiferencial3Partes(resolvedParams, inst, { midPct: porNome(/\bmid\b/), granPct: porNome(/granul/) }, cfg3p)
+      : null
+    const valores = r?.status === 'aplicado' ? r.valores : null
+    return { diffInstrument: valores ? { ...inst, ...valores } : inst, ajusteAplicado: !!valores, midAlto: r?.status === 'mid_alto', estimados: new Set(Object.keys(valores || {})) }
+  }, [resolvedParams, rawInstrumentValues, selectedEquipment, ocultosAparelho, cfg3p])
 
   // Calcula automaticamente os parâmetros com fórmula do catálogo
   useEffect(() => {
@@ -582,7 +598,10 @@ export default function LabHematologiaPage() {
       return param ? (values[formKeyOfParam(param)] || '') : ''
     }
     const updates: Record<string, string> = {}
-    const differential = resolveDifferential(resolvedParams, Object.fromEntries(resolvedParams.map(p => [p.id, values[formKeyOfParam(p)] || ''])), diffInstrument).values
+    const diffRes = resolveDifferential(resolvedParams, Object.fromEntries(resolvedParams.map(p => [p.id, values[formKeyOfParam(p)] || ''])), diffInstrument)
+    const differential = diffRes.values
+    // Só com a estimativa 3 partes ligada (Ielmo): lâmina ou estimativa → absolutos sempre pela fórmula
+    const absPelaFormula = cfg3p.ativa && (ajusteAplicado || diffRes.manual)
     resolvedParams.forEach((param) => {
       if (differentialPercent(param)) {
         const key = formKeyOfParam(param)
@@ -591,12 +610,12 @@ export default function LabHematologiaPage() {
       }
       if (!param.isCalculated) return
       const key = formKeyOfParam(param)
-      if (instrumentKeys.has(key) && !param.preferFormula) return
+      if (instrumentKeys.has(key) && !param.preferFormula && !(absPelaFormula && differentialCell(param) && isAbsolute(param))) return
       const computed = evaluateFormula(param.formula, resolvedParams, valueOf)
       if (computed && values[key] !== computed) updates[key] = computed
     })
     if (Object.keys(updates).length > 0) setValues((current) => ({ ...current, ...updates }))
-  }, [values, resolvedParams, instrumentKeys, rawInstrumentValues, examStatus, diffInstrument])
+  }, [values, resolvedParams, instrumentKeys, rawInstrumentValues, examStatus, diffInstrument, cfg3p.ativa, ajusteAplicado])
 
   const getValue = (key: string) => values[key] ?? ''
   const setValue = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }))
@@ -680,7 +699,7 @@ export default function LabHematologiaPage() {
         unit: param.unit || null,
         reference: param.reference || null,
         sort_order: idx,
-        source: instrumentKeys.has(key) ? 'instrument' : 'manual',
+        source: ajusteAplicado && !differential.manual && estimados.has(String(param.id)) ? 'estimado_3_partes' : instrumentKeys.has(key) ? 'instrument' : 'manual',
       }
     })
     if (rows.length > 0) {
@@ -911,7 +930,10 @@ export default function LabHematologiaPage() {
             </span>
           )}
           {ajusteAplicado && !differential.manual && (
-            <span className="text-[10px] font-semibold text-muted-foreground">Ajuste automático aplicado (Leucócitos ≥ 9.000)</span>
+            <span className="text-[10px] font-semibold text-sky-700">Diferencial estimada (contador 3 partes) — digitar a lâmina substitui</span>
+          )}
+          {midAlto && !differential.manual && (
+            <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600"><AlertTriangle className="h-3 w-3 shrink-0" /> MID alto: fazer lâmina</span>
           )}
           {!diffBlock && diffOver && (
             <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600">
