@@ -3,6 +3,7 @@ import {
   achatarExamesAnalise,
   dataEstaNoPeriodo,
   filtrarPendenciasAnalise,
+  filtrarExamesDigitacao,
   formatarAtrasoReal,
   horasAtrasoReal,
   pendenciasDeDiasAnteriores,
@@ -23,6 +24,41 @@ const exame = (partial: Partial<ExameFilaAnalise>): ExameFilaAnalise => ({
 })
 
 describe('período da Digitação de Resultados', () => {
+  it('ao abrir a digitação em 27/11/2026 exclui pacientes de 24/11, mesmo pendentes ou liberados', () => {
+    const hoje = new Date(2026, 10, 27, 13, 27);
+    const exams = [
+      exame({ id: 'hoje', registeredAt: '2026-11-27T12:00:00Z' }),
+      exame({ id: 'antigo', registeredAt: '2026-11-24T12:00:00Z' }),
+      exame({ id: 'liberado-antigo', registeredAt: '2026-11-24T12:00:00Z', status: 'released' }),
+      exame({ id: 'ontem', registeredAt: '2026-11-26T12:00:00Z' }),
+    ];
+    expect(filtrarExamesDigitacao(exams, { period: 'hoje' }, hoje).map(e => e.id)).toEqual(['hoje']);
+  });
+
+  it('coleta ou atualização de hoje não transforma atendimento de 24/11 em atendimento de hoje', () => {
+    const item = exame({ registeredAt: '2026-11-24T12:00:00Z', collectedAt: '2026-11-27T12:00:00Z', updatedAt: '2026-11-27T12:00:00Z' });
+    expect(filtrarExamesDigitacao([item], { period: 'hoje' }, new Date(2026, 10, 27, 13))).toEqual([]);
+  });
+
+  it('trocar de período para Hoje remove também os pacientes antigos já recebidos pelo modal', () => {
+    const exams = [exame({ id: '24', registeredAt: '2026-11-24' }), exame({ id: '27', registeredAt: '2026-11-27' })];
+    const hoje = new Date(2026, 10, 27, 13);
+    const anteriores = filtrarExamesDigitacao(exams, { period: '7d' }, hoje);
+    expect(anteriores.map(e => e.id)).toEqual(['24', '27']);
+    expect(filtrarExamesDigitacao(anteriores, { period: 'hoje' }, hoje).map(e => e.id)).toEqual(['27']);
+  });
+
+  it('mantém o intervalo personalizado na janela de digitação', () => {
+    const exams = [exame({ id: '24', registeredAt: '2026-11-24' }), exame({ id: '27', registeredAt: '2026-11-27' })];
+    expect(filtrarExamesDigitacao(exams, { period: 'custom', dateFrom: new Date(2026, 10, 24), dateTo: new Date(2026, 10, 24) }).map(e => e.id)).toEqual(['24']);
+  });
+
+  it('preserva acesso explícito às pendências anteriores e busca direta sem misturar na fila Hoje', () => {
+    const exams = [exame({ registeredAt: '2026-11-24' })];
+    expect(filtrarExamesDigitacao(exams, { period: 'Pendências anteriores', ignorarPeriodo: true })).toEqual(exams);
+    expect(filtrarExamesDigitacao(exams, { period: 'hoje', ignorarPeriodo: true })).toEqual(exams);
+  });
+
   it('Hoje inclui somente exames do dia, inclusive quando ainda estão pendentes', () => {
     expect(dataEstaNoPeriodo('2026-11-26T03:00:00.000Z', 'hoje', undefined, undefined, agora)).toBe(true)
     expect(dataEstaNoPeriodo('2026-11-25T23:59:00.000Z', 'hoje', undefined, undefined, agora)).toBe(false)

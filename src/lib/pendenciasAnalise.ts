@@ -89,6 +89,16 @@ export function dataEstaNoPeriodo(
   return true
 }
 
+/** A janela de digitação conserva o mesmo recorte de datas da lista que a abriu. */
+export function filtrarExamesDigitacao<T extends { registeredAt?: string }>(
+  exams: T[],
+  filters: { period: string; dateFrom?: Date; dateTo?: Date; ignorarPeriodo?: boolean },
+  agora = new Date(),
+): T[] {
+  if (filters.ignorarPeriodo) return exams
+  return exams.filter(exam => dataEstaNoPeriodo(exam.registeredAt, filters.period, filters.dateFrom, filters.dateTo, agora))
+}
+
 /** Monta uma única fonte para a fila de hoje e para o relatório de pendências antigas. */
 export function achatarExamesAnalise(orders: any[], catalogExams: any[]): ExameFilaAnalise[] {
   const allExams: ExameFilaAnalise[] = []

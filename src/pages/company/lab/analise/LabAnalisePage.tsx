@@ -56,7 +56,7 @@ import { matchesExamWorkbench } from '@/lib/labExamWorkbench';
 import { buscaSoNumeros, indiceDeEtiquetas, pedidosDaEtiqueta } from '@/lib/buscaEtiqueta';
 import { useCompanySequenceId } from '@/hooks/useCompanySequenceId';
 import { coletasAlteradas, textoColetaAlterada } from '@/lib/coletaProgramadaAnalise';
-import { achatarExamesAnalise, dataEstaNoPeriodo, pendenciasDeDiasAnteriores } from '@/lib/pendenciasAnalise';
+import { achatarExamesAnalise, filtrarExamesDigitacao, pendenciasDeDiasAnteriores } from '@/lib/pendenciasAnalise';
 import { PendenciasAnalisePanel } from '@/components/lab/analise/PendenciasAnalisePanel';
 
 /** Converte data no formato brasileiro DD/MM/AAAA para Date no fuso local. */
@@ -140,6 +140,7 @@ export default function LabAnalisePage() {
     [temBuscaEtiqueta, orders, companySequenceId],
   );
   const [quickFiltersOpen, setQuickFiltersOpen] = useState(false);
+  const buscaDireta = !!(pedidosDaEtiqueta(indiceEtiquetas, search) || pedidosDaEtiqueta(indiceEtiquetas, protocolSearch)) || buscaSoNumeros(search.trim()) || protocolSearch.trim().length > 0;
   // Exames de apoio (modo e alertas) por pedido:exame
   const [apoioModos, setApoioModos] = useState<Record<string, { modo: string; alerta: boolean }>>({});
   useEffect(() => {
@@ -186,7 +187,7 @@ export default function LabAnalisePage() {
   const filteredExams = useMemo(() => {
     const etiquetaBusca = search.trim() ? pedidosDaEtiqueta(indiceEtiquetas, search) : null;
     const etiquetaPedido = protocolSearch.trim() ? pedidosDaEtiqueta(indiceEtiquetas, protocolSearch) : null;
-    return todosExames.filter(exam => {
+    return filtrarExamesDigitacao(todosExames, { period, dateFrom, dateTo, ignorarPeriodo: buscaDireta }).filter(exam => {
       const matchesStatus = selectedStatuses.length === 0 || selectedStatuses.includes(exam.orderStatus || '');
       const matchesSearch = etiquetaBusca
         ? etiquetaBusca.has(exam.orderId)
@@ -206,12 +207,9 @@ export default function LabAnalisePage() {
         (!(querApoioInt || querApoioMan) || (!!apoioModo && ((querApoioInt && apoioModo.modo !== 'manual') || (querApoioMan && apoioModo.modo === 'manual'))))
       );
 
-      // Busca explícita por pedido/etiqueta continua encontrando qualquer pendência carregada.
-      const buscaDireta = !!(etiquetaBusca || etiquetaPedido) || buscaSoNumeros(search.trim()) || protocolSearch.trim().length > 0;
-      const matchesPeriod = buscaDireta || dataEstaNoPeriodo(exam.registeredAt, period, dateFrom, dateTo);
-      return matchesStatus && matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin && matchesPeriod;
+      return matchesStatus && matchesSearch && matchesProtocol && matchesWorkbench && matchesOrigin;
     });
-  }, [todosExames, apoioModos, search, protocolSearch, selectedWorkbenches, selectedEstablishments, selectedStatuses, period, dateFrom, dateTo, indiceEtiquetas]);
+  }, [todosExames, apoioModos, search, protocolSearch, selectedWorkbenches, selectedEstablishments, selectedStatuses, period, dateFrom, dateTo, indiceEtiquetas, buscaDireta]);
   const pendenciasAnteriores = useMemo(() => pendenciasDeDiasAnteriores(todosExames), [todosExames]);
   const pendingEntryExams = useMemo(() => {
     const ids = new Set(pendingEntryIds);
@@ -717,12 +715,16 @@ export default function LabAnalisePage() {
         filteredExams={entrySource === 'pendencias' ? pendingEntryExams : examsForEntry}
         filters={entrySource === 'pendencias' ? {
           period: 'Pendências anteriores',
+          ignorarPeriodo: true,
           workbenches: [],
           establishments: [],
           protocol: '',
           statuses: [],
         } : {
           period,
+          dateFrom,
+          dateTo,
+          ignorarPeriodo: buscaDireta,
           workbenches: selectedWorkbenches,
           establishments: selectedEstablishments,
           protocol: protocolSearch,

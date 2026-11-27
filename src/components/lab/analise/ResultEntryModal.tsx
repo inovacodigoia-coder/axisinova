@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { buildExamParams, catalogKey, findCatalogExam, evaluateFormula, normalizeText, resolveReference } from '@/utils/examParameters';
 import { differentialCell, differentialPercent, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential';
 import { matchesExamWorkbench } from '@/lib/labExamWorkbench';
+import { filtrarExamesDigitacao } from '@/lib/pendenciasAnalise';
 
 import { resolveCompanyId } from '@/utils/companyId';
 import { useAuth } from '@/context/AuthContext';
@@ -98,6 +99,9 @@ interface ResultEntryModalProps {
   filteredExams: any[];
   filters: {
     period: string;
+    dateFrom?: Date;
+    dateTo?: Date;
+    ignorarPeriodo?: boolean;
     workbenches: string[];
     establishments: string[];
     protocol: string;
@@ -110,13 +114,17 @@ interface ResultEntryModalProps {
 export function ResultEntryModal({ 
   isOpen, 
   onClose, 
-  filteredExams, 
+  filteredExams: receivedExams,
   filters,
   workbenchNames,
   establishmentNames,
   refreshData,
   onOpenFilters
 }: ResultEntryModalProps & { refreshData?: () => void; onOpenFilters?: () => void }) {
+  const filteredExams = useMemo(
+    () => filtrarExamesDigitacao(receivedExams, filters),
+    [receivedExams, filters.period, filters.dateFrom, filters.dateTo, filters.ignorarPeriodo],
+  );
   const { user } = useAuth();
   const { canType, canRelease, canCorrect } = useResultEntryPermissions();
   const [correctionUnlocked, setCorrectionUnlocked] = useState<Record<string, boolean>>({});

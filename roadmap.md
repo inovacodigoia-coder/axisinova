@@ -1,4 +1,6 @@
 # Etapas AxisInova (prompt-18)
+- [x] Recorte de datas compartilhado pela lista e janela Digitação: Hoje em 27/11/2026 exclui atendimentos de 24/11, em Todos e 1 por vez; 20 testes passaram e build OK, preservando Pendências Anteriores e busca direta.
+- [ ] Conferir esta correção com login real: prévia redireciona para /login; depende de sessão autorizada, não foi gerada sessão em nome de usuário.
 - [x] Etapa 1: laudo_code opcional — padrão laudo do resultado/item/bancada/ordem 1, 409 para código inválido, bench_laudos na lista; publicado.
 - [x] Etapa 2: sobrescrever resultado e reteste (feito no pedido anterior); responder as 3 perguntas.
 - [x] Etapa 3: vários laudos (já existia) + escolha clonar/em branco, bloqueio de excluir o último ativo, parâmetros dos laudos no aparelho.
