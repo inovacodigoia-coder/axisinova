@@ -4,6 +4,7 @@ import { ColetasEtiquetaCard } from '@/components/lab/catalog/ColetasEtiquetaCar
 import { supabase } from '@/integrations/supabase/client'
 import { useExamLaudos, ensureDefaultLaudo } from '@/hooks/useExamLaudos'
 import ExamLaudosSection from '@/components/lab/catalog/ExamLaudosSection'
+import { CatalogSpreadsheetActions } from '@/components/lab/catalog/CatalogSpreadsheetActions'
 import ExamLaudoBancadaSection from '@/components/lab/catalog/ExamLaudoBancadaSection'
 import BancadaTrocaDialog from '@/components/lab/catalog/BancadaTrocaDialog'
 import { SelectGroup, SelectLabel } from '@/components/ui/select'
@@ -161,6 +162,11 @@ export default function LabCatalogFormPage() {
   const companyIdForLaudos = laudos[0]?.company_id
   const defaultLaudoId = laudos[0]?.id || ''
   const isDefaultLaudo = !selectedLaudoId || selectedLaudoId === defaultLaudoId
+  const selectedLaudo = laudos.find(l => l.id === selectedLaudoId)
+  const configureLaudo = (laudoId: string) => {
+    setSelectedLaudoId(laudoId)
+    setActiveTab('parameters')
+  }
   const examCompanyId = companyIdForLaudos || (exams || []).find((e: any) => e.id === id)?.companyId
   const [confirmationQuestions, setConfirmationQuestions] = useState<string[]>([])
   const [availableEquipments, setAvailableEquipments] = useState<any[]>([])
@@ -540,6 +546,13 @@ export default function LabCatalogFormPage() {
         </div>
       </div>
 
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button variant="outline" className="gap-2" onClick={() => navigate('/app/cadastros/catalogo')}>
+          <Beaker className="h-4 w-4" /> Catálogo de Exames
+        </Button>
+        <CatalogSpreadsheetActions />
+      </div>
+
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="bg-card border border-border p-1 h-auto w-full justify-start gap-1 flex-wrap">
           <TabsTrigger value="general" className="gap-2 px-4 py-2 data-[state=active]:gradient-bg data-[state=active]:text-white">
@@ -583,6 +596,7 @@ export default function LabCatalogFormPage() {
             laudos={laudos}
             selectedLaudoId={selectedLaudoId}
             onSelect={setSelectedLaudoId}
+            onConfigure={configureLaudo}
             onReload={reloadLaudos}
           />
           <ExamLaudoBancadaSection
@@ -598,6 +612,17 @@ export default function LabCatalogFormPage() {
           />
         </TabsContent>
         <TabsContent value="parameters">
+          {selectedLaudo && (
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <Badge variant="outline">{selectedLaudo.code}</Badge>
+                <h2 className="break-words text-sm font-semibold">{selectedLaudo.name}</h2>
+              </div>
+              <Button variant="ghost" size="sm" className="gap-2" onClick={() => setActiveTab('report')}>
+                <ArrowLeft className="h-4 w-4" /> Laudos do Exame
+              </Button>
+            </div>
+          )}
           <ParametersSection 
             parameters={parameters} 
             setParameters={setParameters} 

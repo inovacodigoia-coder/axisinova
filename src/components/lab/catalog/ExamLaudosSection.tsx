@@ -21,11 +21,12 @@ interface Props {
   laudos: ExamLaudo[]
   selectedLaudoId?: string
   onSelect: (laudoId: string) => void
+  onConfigure: (laudoId: string) => void
   onReload: () => void
 }
 
 /** Lista de laudos do exame: cada laudo tem a sua própria configuração. */
-export default function ExamLaudosSection({ examId, companyId, laudos, selectedLaudoId, onSelect, onReload }: Props) {
+export default function ExamLaudosSection({ examId, companyId, laudos, selectedLaudoId, onSelect, onConfigure, onReload }: Props) {
   const [creating, setCreating] = useState(false)
   const [form, setForm] = useState({ code: '', name: '', copyFrom: '' })
   const [saving, setSaving] = useState(false)
@@ -114,7 +115,8 @@ export default function ExamLaudosSection({ examId, companyId, laudos, selectedL
       return
     }
     toast.success('Laudo excluído')
-    if (selectedLaudoId === laudo.id) onSelect(laudos.find((l) => l.id !== laudo.id)!.id)
+    const remaining = laudos.find((l) => l.id !== laudo.id)
+    if (selectedLaudoId === laudo.id && remaining) onSelect(remaining.id)
     onReload()
   }
 
@@ -140,12 +142,12 @@ export default function ExamLaudosSection({ examId, companyId, laudos, selectedL
         {laudos.map((laudo) => (
           <div
             key={laudo.id}
-            className={`flex items-center gap-3 rounded-lg border p-3 ${
+            className={`flex flex-wrap items-center gap-3 rounded-lg border p-3 ${
               selectedLaudoId === laudo.id ? 'border-primary bg-primary/5' : 'border-border'
             }`}
           >
             <Badge variant="outline" className="font-black text-[10px]">{laudo.code}</Badge>
-            <span className="flex-1 text-sm font-semibold">{laudo.name}</span>
+            <span className="min-w-0 flex-1 basis-40 break-words text-sm font-semibold">{laudo.name}</span>
             <div className="flex items-center gap-2">
               <Label className="text-[10px] uppercase text-muted-foreground">Ordem</Label>
               <Input
@@ -161,7 +163,7 @@ export default function ExamLaudosSection({ examId, companyId, laudos, selectedL
               size="sm"
               variant={selectedLaudoId === laudo.id ? 'default' : 'outline'}
               className="gap-2"
-              onClick={() => onSelect(laudo.id)}
+              onClick={() => onConfigure(laudo.id)}
             >
               <Settings2 className="h-3.5 w-3.5" /> Configurar
             </Button>
