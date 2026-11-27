@@ -24,12 +24,23 @@ export function ajusteDiferencial3Partes(params: ResolvedParam[], instrument: Re
   const pct = params.filter(p => differentialCell(p) && !isAbsolute(p) && hematologyNumber(instrument[p.id]) != null)
   const hasSeg = pct.some(p => differentialCell(p) === 'segments')
   const cells = pct.filter(p => !(hasSeg && differentialCell(p) === 'neutrophils'))
-  const eos = cells.find(p => differentialCell(p) === 'eosinophils')
-  const mono = cells.find(p => differentialCell(p) === 'monocytes')
-  if (!eos || !mono) return null
-
   const v: Record<string, number> = {}
   for (const p of cells) v[p.id] = Math.floor(hematologyNumber(instrument[p.id])!) // número quebrado: arredonda para baixo
+  // Aparelho 3 partes pode não enviar Monócitos/Eosinófilos: o que falta para 100% vira Monócitos (MID).
+  const allPct = params.filter(p => differentialCell(p) && !isAbsolute(p))
+  const achar = (c: string) => cells.find(p => differentialCell(p) === c) || allPct.find(p => differentialCell(p) === c)
+  const eos = achar('eosinophils')
+  const mono = achar('monocytes')
+  if (!eos || !mono) return null
+  if (!cells.includes(mono) || !cells.includes(eos)) {
+    const temNeutro = cells.some(p => ['neutrophils', 'segments'].includes(differentialCell(p) as string))
+    if (!temNeutro || !cells.some(p => differentialCell(p) === 'lymphocytes')) return null
+    if (!cells.includes(eos)) { v[eos.id] = 0; cells.push(eos) }
+    if (!cells.includes(mono)) {
+      const soma = cells.filter(p => p.id !== mono.id).reduce((s, p) => s + v[p.id], 0)
+      v[mono.id] = Math.max(0, 100 - soma); cells.push(mono)
+    }
+  }
   v[mono.id] = v[mono.id] - 1 // compensa o 1 atribuído ao eosinófilo
   v[eos.id] = 1
   if (v[mono.id] < 0) v[mono.id] = 0

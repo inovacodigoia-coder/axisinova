@@ -22,4 +22,8 @@ describe('ajuste automático 3 partes', () => {
     const r = ajusteDiferencial3Partes(params, { '0': '9,5', '1': '62,7', '2': '28,6', '3': '8,7', '4': '0', '5': '0' })!
     expect(soma(r)).toBe(100); expect(r['4']).toBe('1')
   })
+  it('aparelho sem monócito/eosinófilo: o resto vira monócito e aplica a regra', () => {
+    const r = ajusteDiferencial3Partes(params, { '0': '11300', '1': '60', '2': '30' })!
+    expect(r['2']).toBe('30'); expect(r['1']).toBe('60'); expect(r['3']).toBe('9'); expect(r['4']).toBe('1'); expect(soma(r)).toBe(100)
+  })
 })
