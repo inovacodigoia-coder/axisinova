@@ -15,6 +15,7 @@ import { useResultEntryPermissions } from '@/hooks/useResultEntryPermissions'
 import { resolveCompanyId } from '@/utils/companyId'
 import { buildExamParams, evaluateFormula, findCatalogExam, type ResolvedParam } from '@/utils/examParameters'
 import { supabase } from '@/integrations/supabase/client'
+import { ajusteDiferencial3Partes, EMPRESAS_AJUSTE_3_PARTES } from '@/utils/ajusteDiferencial3Partes'
 import { differentialPercent, resolveDifferential, hematologyReady } from '@/utils/hematologyDifferential'
 import { InstrumentGraphicsSection } from '@/components/lab/analise/InstrumentGraphicsSection'
 import { DesliberarExameDialog } from '@/components/lab/analise/DesliberarExameDialog'
@@ -562,6 +563,17 @@ export default function LabHematologiaPage() {
     return () => { cancelled = true }
   }, [selected, resolvedParams, user?.companyId])
 
+  // Ajuste automático 3 partes (piloto Ielmo Marinho): entra como "valor do aparelho" da diferencial;
+  // o original continua salvo em instrument_value e qualquer digitação manual pausa o ajuste.
+  const { diffInstrument, ajusteAplicado } = useMemo(() => {
+    const inst: Record<string, string> = Object.fromEntries(resolvedParams.filter(p => rawInstrumentValues[formKeyOfParam(p)] != null).map(p => [p.id, rawInstrumentValues[formKeyOfParam(p)]]))
+    const cid = resolveCompanyId(user?.companyId)
+    const tresPartes = String(selectedEquipment?.differential_type || '').startsWith('3')
+    const ajuste = tresPartes && cid && EMPRESAS_AJUSTE_3_PARTES.includes(cid) ? ajusteDiferencial3Partes(resolvedParams, inst) : null
+    return { diffInstrument: ajuste ? { ...inst, ...ajuste } : inst, ajusteAplicado: !!ajuste }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resolvedParams, rawInstrumentValues, selectedEquipment, user?.companyId])
+
   // Calcula automaticamente os parâmetros com fórmula do catálogo
   useEffect(() => {
     if (resolvedParams.length === 0 || examStatus === 'released') return
@@ -570,7 +582,7 @@ export default function LabHematologiaPage() {
       return param ? (values[formKeyOfParam(param)] || '') : ''
     }
     const updates: Record<string, string> = {}
-    const differential = resolveDifferential(resolvedParams, Object.fromEntries(resolvedParams.map(p => [p.id, values[formKeyOfParam(p)] || ''])), Object.fromEntries(resolvedParams.filter(p => rawInstrumentValues[formKeyOfParam(p)] != null).map(p => [p.id, rawInstrumentValues[formKeyOfParam(p)]]))).values
+    const differential = resolveDifferential(resolvedParams, Object.fromEntries(resolvedParams.map(p => [p.id, values[formKeyOfParam(p)] || ''])), diffInstrument).values
     resolvedParams.forEach((param) => {
       if (differentialPercent(param)) {
         const key = formKeyOfParam(param)
@@ -584,7 +596,7 @@ export default function LabHematologiaPage() {
       if (computed && values[key] !== computed) updates[key] = computed
     })
     if (Object.keys(updates).length > 0) setValues((current) => ({ ...current, ...updates }))
-  }, [values, resolvedParams, instrumentKeys, rawInstrumentValues, examStatus])
+  }, [values, resolvedParams, instrumentKeys, rawInstrumentValues, examStatus, diffInstrument])
 
   const getValue = (key: string) => values[key] ?? ''
   const setValue = (key: string, value: string) => setValues((current) => ({ ...current, [key]: value }))
@@ -592,7 +604,7 @@ export default function LabHematologiaPage() {
 
   const differential = resolveDifferential(resolvedParams,
     Object.fromEntries(resolvedParams.map(p => [p.id, values[formKeyOfParam(p)] || ''])),
-    Object.fromEntries(resolvedParams.filter(p => rawInstrumentValues[formKeyOfParam(p)] != null).map(p => [p.id, rawInstrumentValues[formKeyOfParam(p)]])))
+    diffInstrument)
   const diffTotal = differential.total
   const diffOver = differential.warning
   const diffBlock = differential.blockRelease
@@ -897,6 +909,9 @@ export default function LabHematologiaPage() {
             <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-rose-600">
               <AlertTriangle className="h-3 w-3 shrink-0" /> A diferencial digitada soma {diffTotal.toFixed(2).replace('.', ',')}% — a liberação fica bloqueada até fechar 100%
             </span>
+          )}
+          {ajusteAplicado && !differential.manual && (
+            <span className="text-[10px] font-semibold text-muted-foreground">Ajuste automático aplicado (Leucócitos ≥ 9.000)</span>
           )}
           {!diffBlock && diffOver && (
             <span className="flex items-center gap-1 text-[10px] font-bold uppercase text-amber-600">
