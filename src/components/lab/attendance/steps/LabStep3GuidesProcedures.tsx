@@ -164,7 +164,8 @@ export function LabStep3GuidesProcedures({ state, update }: Props) {
   useEffect(() => {
     if (!cadastroRapido) return;
     const onKey = (ev: KeyboardEvent) => {
-      const algumModal = !!document.querySelector('[role="dialog"]');
+      // O próprio cadastro é uma janela: só conta outra janela aberta por cima dele
+      const algumModal = document.querySelectorAll('[role="dialog"]').length > 1;
       if (abreBuscaPeloTeclado(ev.key, (ev.target as HTMLElement)?.tagName, showExamModal || algumModal)) {
         ev.preventDefault();
         handleOpenExamModal();

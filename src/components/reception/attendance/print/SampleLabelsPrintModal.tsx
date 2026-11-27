@@ -106,7 +106,7 @@ export function SampleLabelsPrintModal({
     }, 60)
   }
 
-  const handlePrint = async () => {
+  const handlePrint = async (manual = true) => {
     if (enviando) return
     setEnviando(true)
     try {
@@ -134,12 +134,13 @@ export function SampleLabelsPrintModal({
         onPrinted?.()
         return
       }
+      const usarNavegador = !autoPrint || manual
       if (!ativo) {
-        toast.warning(autoPrint
-          ? 'Servidor local não detectado. Abra o AisAxius e clique em Imprimir; a etiqueta ainda não foi enviada.'
-          : 'Servidor de Impressão AisAxius não está aberto. Usando a impressão do navegador.')
+        toast.warning(usarNavegador
+          ? 'Servidor de Impressão AisAxius não está aberto. Usando a impressão do navegador.'
+          : 'Servidor local não detectado. Abra o AisAxius ou clique em Imprimir para usar o navegador; a etiqueta ainda não foi enviada.')
       }
-      if (!autoPrint) printNavegador()
+      if (usarNavegador) printNavegador()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Não foi possível confirmar o envio da etiqueta. Confira a impressora antes de tentar novamente.')
     } finally {
@@ -150,7 +151,7 @@ export function SampleLabelsPrintModal({
   useEffect(() => {
     if (!open) envioAutomatico.current = false
     if (open && autoPrint && labelsFinais.length && !envioAutomatico.current) {
-      const t = setTimeout(() => { envioAutomatico.current = true; void handlePrint() }, 400)
+      const t = setTimeout(() => { envioAutomatico.current = true; void handlePrint(false) }, 400)
       return () => clearTimeout(t)
     }
   }, [open, autoPrint, labelsFinais.length])
@@ -176,7 +177,7 @@ export function SampleLabelsPrintModal({
           </div>
           <div className="flex items-center gap-2">
             <ServidorImpressaoStatus />
-            <Button size="sm" onClick={handlePrint} disabled={!labelsFinais.length || enviando}>
+            <Button size="sm" onClick={() => void handlePrint(true)} disabled={!labelsFinais.length || enviando}>
               {enviando ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Printer className="h-4 w-4 mr-1" />}
               {enviando ? 'Enviando...' : 'Imprimir'}
             </Button>

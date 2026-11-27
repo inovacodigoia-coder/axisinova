@@ -624,7 +624,8 @@ export default function LabHematologiaPage() {
           instrument_value: v.instrument_value ?? null,
         }
       })
-      const mudados = mudadosPeloAparelho(rawInstrumentValues, gravados)
+      // Parâmetros sem campo na tela (ex.: ocultos) não são gravados por ela: não entram na checagem
+      const mudados = mudadosPeloAparelho(rawInstrumentValues, gravados.filter((g) => !g.key.startsWith('?')))
       if (mudados.length) {
         const erro = new AparelhoMudouError(mudados)
         toast.error(erro.message, { duration: 10000 })
