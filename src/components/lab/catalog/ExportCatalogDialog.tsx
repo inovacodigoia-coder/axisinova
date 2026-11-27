@@ -22,7 +22,7 @@ interface ExportCatalogDialogProps {
   exams: ExportCatalogExam[];
   workbenches: { id: string; name: string }[];
   exporting: boolean;
-  onExport: (ids: string[]) => void;
+  onExport: (ids: string[], options: { incluirLaudos: boolean }) => void;
 }
 
 const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -31,12 +31,14 @@ export function ExportCatalogDialog({ open, onOpenChange, exams, workbenches, ex
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [query, setQuery] = useState('');
   const [workbench, setWorkbench] = useState('all');
+  const [incluirLaudos, setIncluirLaudos] = useState(true);
 
   useEffect(() => {
     if (open) {
       setSelected(new Set());
       setQuery('');
       setWorkbench('all');
+      setIncluirLaudos(true);
     }
   }, [open]);
 
@@ -136,9 +138,15 @@ export function ExportCatalogDialog({ open, onOpenChange, exams, workbenches, ex
           )}
         </div>
 
+        <label className="flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer">
+          <Checkbox checked={incluirLaudos} onCheckedChange={c => setIncluirLaudos(c === true)} />
+          <span><span className="font-semibold">Exportar com Laudo do Exame</span>
+            <span className="block text-xs text-muted-foreground">Inclui todos os laudos de cada exame (L001, L002...) com seus parâmetros e modelo.</span></span>
+        </label>
+
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={exporting}>Cancelar</Button>
-          <Button onClick={() => onExport(Array.from(selected))} disabled={selected.size === 0 || exporting} className="gap-2">
+          <Button onClick={() => onExport(Array.from(selected), { incluirLaudos })} disabled={selected.size === 0 || exporting} className="gap-2">
             {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
             Exportar {selected.size > 0 ? `${selected.size} exame(s)` : ''}
           </Button>

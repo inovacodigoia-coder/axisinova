@@ -8,6 +8,7 @@ import { buscarEmBlocos, emPedacos } from '@/lib/buscarEmBlocos'
 import { configuracaoExame, configuracaoParametro } from '@/lib/catalogoConfiguracao'
 import { exportReferenceModeColumns } from '@/lib/examReferenceMode'
 import { exportExamBillingCodes } from '@/lib/examBillingCodes'
+import { ABA_LAUDOS, linhaLaudo } from '@/lib/catalogoLaudos'
 import { ExportCatalogDialog } from './ExportCatalogDialog'
 import { ImportarPlanilhaModal } from './ImportarPlanilhaModal'
 
@@ -28,7 +29,7 @@ export function CatalogSpreadsheetActions() {
     status: e.isActive ? 'active' : 'inactive',
   })), [registeredExams, workbenches])
 
-  const handleExport = async (selectedIds: string[]) => {
+  const handleExport = async (selectedIds: string[], { incluirLaudos }: { incluirLaudos: boolean } = { incluirLaudos: false }) => {
     setIsExporting(true)
     try {
       const XLSX = await import('xlsx')
@@ -273,6 +274,34 @@ export function CatalogSpreadsheetActions() {
       if (refsData.length > 0) {
         const wsRefs = XLSX.utils.json_to_sheet(refsData)
         XLSX.utils.book_append_sheet(wb, wsRefs, "Faixas de Referência")
+      }
+
+      if (incluirLaudos) {
+        const laudos: any[] = []
+        for (const lote of emPedacos(labExams.map(e => e.id))) {
+          laudos.push(...(await buscarEmBlocos<any>((de, ate) => (supabase.from('exam_laudos') as any).select('*').in('exam_id', lote).order('id').range(de, ate))).linhas)
+        }
+        const tplIds = [...new Set(laudos.map(l => l.report_template_id).filter(Boolean))]
+        const tpls = new Map<string, any>()
+        if (tplIds.length) {
+          const { data, error } = await supabase.from('lab_report_templates').select('id, name, description, header_html, body_html, footer_html, single_page, is_active').in('id', tplIds)
+          if (error) throw error
+          data?.forEach(t => tpls.set(t.id, t))
+        }
+        const laudosData = labExams.flatMap(e => laudos.filter(l => l.exam_id === e.id)
+          .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
+          .map(l => {
+            const t = l.report_template_id ? tpls.get(l.report_template_id) : null
+            return linhaLaudo(e.internalCode || e.tussCode || '', {
+              code: l.code, name: l.name, sort_order: l.sort_order, is_active: l.is_active, methodology: l.methodology,
+              parameters: l.parameters || [], reference_values: l.reference_values || [], result_deadline_days: l.result_deadline_days,
+              workbench: workbenches.find(w => w.id === l.workbench_id)?.name || null,
+              selected_materials: l.selected_materials || [], default_material: l.default_material, material_tubos: l.material_tubos || {},
+              report_single_page: l.report_single_page, report_observations: l.report_observations,
+              template: t ? { name: t.name, description: t.description, header_html: t.header_html, body_html: t.body_html, footer_html: t.footer_html, single_page: t.single_page, is_active: t.is_active } : null,
+            })
+          }))
+        if (laudosData.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(laudosData), ABA_LAUDOS)
       }
 
       XLSX.writeFile(wb, `Catalogo_Exames_${new Date().toISOString().split('T')[0]}.xlsx`)

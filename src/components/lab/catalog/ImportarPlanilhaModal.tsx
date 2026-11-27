@@ -26,6 +26,7 @@ import * as XLSX from 'xlsx';
 import { cn } from "@/lib/utils";
 import { toast } from 'sonner';
 import { useRegisters } from '@/context/RegistersContext';
+import { ABA_LAUDOS, lerLinhaLaudo, type LaudoExportado } from '@/lib/catalogoLaudos';
 import { importReferenceAge } from '@/utils/importReferenceAge';
 import { importExamBillingCodes } from '@/lib/examBillingCodes';
 
@@ -65,6 +66,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
   const [errors, setErrors] = useState<RowError[]>([]);
   const [totalParams, setTotalParams] = useState(0);
   const [totalRefs, setTotalRefs] = useState(0);
+  const [laudosPlanilha, setLaudosPlanilha] = useState<{ codigoExame: string; laudo: LaudoExportado }[]>([]);
   const [parsedExams, setParsedExams] = useState<ExamImportData[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -117,6 +119,9 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const catalogData = XLSX.utils.sheet_to_json<any>(catalogSheet, { raw: false, defval: '' });
         const paramsData = paramsSheet ? XLSX.utils.sheet_to_json<any>(paramsSheet) : [];
         const refsData = refsSheet ? XLSX.utils.sheet_to_json<any>(refsSheet) : [];
+        const laudosSheet = workbook.Sheets[ABA_LAUDOS];
+        const laudosLidos = laudosSheet ? XLSX.utils.sheet_to_json<any>(laudosSheet, { defval: '' }).map(lerLinhaLaudo) : [];
+        if (laudosLidos.some(l => !l)) throw new Error(`Aba "${ABA_LAUDOS}" tem linha com configuração inválida.`);
         // Validate before any exam is saved, using the same parser for both stores.
         refsData.forEach(importReferenceAge);
 
@@ -202,6 +207,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         setErrors(foundErrors); 
         setTotalParams(paramsData.length);
         setTotalRefs(refsData.length);
+        setLaudosPlanilha(laudosLidos as any);
         setState('preview');
       } catch (error: any) {
         console.error(error);
@@ -245,6 +251,44 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
         const raw = p['Opções de seleção'] ?? p['Opções'] ?? p['OPÇÕES'] ?? p['Opcoes'] ?? '';
         if (Array.isArray(raw)) return raw.map((o: any) => String(o).trim()).filter(Boolean);
         return String(raw).split(/[|;\n]/).map(o => o.trim()).filter(Boolean);
+      };
+
+      const modelos = new Map<string, string>();
+      const importarLaudos = async (examId: string, codigo: string, companyId: string) => {
+        for (const { laudo: l } of laudosPlanilha.filter(x => x.codigoExame === codigo)) {
+          let templateId: string | null = null;
+          if (l.template) {
+            const chave = JSON.stringify(l.template);
+            templateId = modelos.get(chave) ?? null;
+            if (!templateId) {
+              const { data: iguais } = await supabase.from('lab_report_templates').select('id, description, body_html, header_html, footer_html')
+                .eq('company_id', companyId).eq('name', l.template.name);
+              const igual = (iguais || []).find(t => (t.description ?? null) === (l.template!.description ?? null) && (t.body_html ?? null) === (l.template!.body_html ?? null)
+                && (t.header_html ?? null) === (l.template!.header_html ?? null) && (t.footer_html ?? null) === (l.template!.footer_html ?? null));
+              if (igual) templateId = igual.id;
+              else {
+                const { data: novo, error } = await supabase.from('lab_report_templates')
+                  .insert({ ...l.template, company_id: companyId, is_default: false }).select('id').single();
+                if (error) throw new Error(`Modelo do laudo ${l.code} (${codigo}): ${error.message}`);
+                templateId = novo.id;
+              }
+              modelos.set(chave, templateId!);
+            }
+          }
+          const payload: any = {
+            exam_id: examId, company_id: companyId, code: l.code, name: l.name, sort_order: l.sort_order, is_active: l.is_active,
+            methodology: l.methodology, parameters: l.parameters || [], reference_values: l.reference_values || [],
+            result_deadline_days: l.result_deadline_days,
+            workbench_id: l.workbench ? workbenches.find(w => w.name.toLowerCase() === String(l.workbench).toLowerCase())?.id ?? null : null,
+            selected_materials: l.selected_materials || [], default_material: l.default_material, material_tubos: l.material_tubos || {},
+            report_single_page: l.report_single_page, report_observations: l.report_observations, report_template_id: templateId,
+          };
+          const { data: atual } = await supabase.from('exam_laudos').select('id').eq('exam_id', examId).ilike('code', l.code).maybeSingle();
+          const { error } = atual
+            ? await supabase.from('exam_laudos').update(payload).eq('id', atual.id)
+            : await supabase.from('exam_laudos').insert(payload);
+          if (error) throw new Error(`Laudo ${l.code} (${codigo}): ${error.message}`);
+        }
       };
 
       for (const examData of parsedExams) {
@@ -448,6 +492,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
               }
             }
           }
+          await importarLaudos(examId, examData.codigo, companyId);
         }
       }
       
@@ -588,7 +633,7 @@ export const ImportarPlanilhaModal = ({ isOpen, onClose, existingCodes = [] }: I
                       <ChevronRight className="h-3 w-3" /> {totalParams} parâmetros
                     </span>
                     <span className="flex items-center gap-1">
-                      <ChevronRight className="h-3 w-3" /> {totalRefs} faixas de referência
+                      <ChevronRight className="h-3 w-3" /> {totalRefs} faixas de referência{laudosPlanilha.length > 0 ? ` · ${laudosPlanilha.length} laudo(s) do exame` : ''}
                     </span>
                   </div>
                 </div>
