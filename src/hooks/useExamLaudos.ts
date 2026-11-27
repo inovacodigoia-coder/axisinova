@@ -17,6 +17,9 @@ export interface ExamLaudo {
   selected_materials: string[]
   material_tubos?: Record<string, { recipiente_id?: string | null; volume_ml?: number | null }>
   default_material: string | null
+  report_template_id?: string | null
+  report_single_page?: boolean | null
+  report_observations?: string | null
 }
 
 /** Próximo código sequencial no formato L001, L002... */
@@ -41,7 +44,7 @@ export function useExamLaudos(examId?: string) {
     setLoading(true)
     const { data, error } = await supabase
       .from('exam_laudos')
-      .select('id, exam_id, company_id, code, name, sort_order, is_active, methodology, parameters, reference_values, result_deadline_days, workbench_id, selected_materials, default_material, material_tubos')
+      .select('id, exam_id, company_id, code, name, sort_order, is_active, methodology, parameters, reference_values, result_deadline_days, workbench_id, selected_materials, default_material, material_tubos, report_template_id, report_single_page, report_observations')
       .eq('exam_id', examId)
       .order('sort_order', { ascending: true })
     setLoading(false)
@@ -83,6 +86,9 @@ export async function ensureDefaultLaudo(examId: string, companyId: string, exam
       sort_order: 1,
       is_active: true,
       methodology: exam?.methodology || null,
+      report_template_id: exam?.reportTemplateId || null,
+      report_single_page: exam?.reportSinglePage ?? false,
+      report_observations: exam?.reportObservations || null,
       parameters: exam?.parameters || [],
       reference_values: exam?.referenceValues || [],
       result_deadline_days: exam?.resultDeadlineDays ?? null,

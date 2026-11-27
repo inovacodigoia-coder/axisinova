@@ -78,6 +78,7 @@ export default function ExamReportSection({ data, parameters, onChange }: Props)
       exams: [
         {
           examId: 'preview',
+          collectedAt: new Date().toISOString(),
           code: data.internalCode || '—',
           name: data.name || 'Exame sem nome',
           material: data.defaultMaterial || 'Soro',
@@ -93,7 +94,8 @@ export default function ExamReportSection({ data, parameters, onChange }: Props)
             parameterCode: p.name,
             parameterName: p.name,
             section: p.section || '',
-            value: p.type === 'text' || p.type === 'select' ? 'Resultado' : '0,00',
+            reportLabel: p.reportLabel || '',
+            value: p.type === 'text' || String(p.type).startsWith('sele') ? 'Resultado' : '0,00',
             unit: p.unit || '',
             referenceRange: formatReference(p),
             flag: '',

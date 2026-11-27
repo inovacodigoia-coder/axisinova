@@ -386,7 +386,7 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
                       labOrder.collectionStatus === 'collected';
 
   // Resultados digitados/liberados do pedido (mesma fonte da Digitação de Resultados)
-  const [labResults, setLabResults] = useState<Record<string, { status: string; notes?: string; values: any[]; typedAt?: string | null; releasedAt?: string | null; releasedBy?: string | null }>>({})
+  const [labResults, setLabResults] = useState<Record<string, { status: string; notes?: string; values: any[]; typedAt?: string | null; releasedAt?: string | null; releasedBy?: string | null; laudoId?: string | null }>>({})
   const [approvers, setApprovers] = useState<Record<string, { name: string; register: string }>>({})
 
   useEffect(() => {
@@ -399,13 +399,14 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       // Sempre pelo ID do pedido (protocolo pode se repetir entre pedidos)
       const { data, error } = await supabase
         .from('lab_exam_results')
-        .select('exam_code, exam_name, status, notes, typed_at, released_at, released_by, lab_result_values(parameter_key, parameter_name, value, unit, reference, status, sort_order, instrument_code)')
+        .select('exam_code, exam_name, status, notes, typed_at, released_at, released_by, laudo_id, lab_result_values(parameter_key, parameter_name, value, unit, reference, status, sort_order, instrument_code)')
         .eq('order_id', orderId)
       if (!active || error || !data) return
-      const map: Record<string, { status: string; notes?: string; values: any[]; typedAt?: string | null; releasedAt?: string | null; releasedBy?: string | null }> = {}
+      const map: Record<string, { status: string; notes?: string; values: any[]; typedAt?: string | null; releasedAt?: string | null; releasedBy?: string | null; laudoId?: string | null }> = {}
       data.forEach((row: any) => {
         const entry = {
           status: row.status,
+          laudoId: row.laudo_id,
           notes: row.notes || '',
           typedAt: row.typed_at || null,
           releasedAt: row.released_at || null,
@@ -488,6 +489,9 @@ export function AttendanceDetailsModal({ open, onClose, onOrderDeleted, order, p
       approvedRegister: ap?.register || undefined,
       approvedAt: res?.releasedAt || undefined,
       examId: e.examId || e.id,
+      catalogId: findCatalog(e)?.id,
+      laudoId: res?.laudoId || e.laudoId,
+      collectedAt: e.collectedAt,
       code: e.code,
       name: e.name,
       material: e.material || 'Soro',

@@ -1034,6 +1034,9 @@ export function ResultEntryModal({
           return {
             _ref: examRefOf(e),
             examId: e.id,
+            catalogId: catalogExam?.id,
+            laudoId: laudoAtivo?.id,
+            collectedAt: e.collectedAt,
             code: e.code,
             name: catalogExam?.name || e.name,
             material: e.material || catalogExam?.default_material || 'Soro',
@@ -1053,6 +1056,7 @@ export function ResultEntryModal({
                 parameterName: p.name,
                 instrumentCode: instrumentCodes[`${e.id}_${p.id}`],
                 section: p.section || '',
+                reportLabel: p.reportLabel || '',
                 value,
                 unit: p.unit || '',
                 referenceRange: reference || '—',

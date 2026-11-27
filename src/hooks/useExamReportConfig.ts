@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/context/AuthContext'
+import { configurarLaudoImpresso } from '@/lib/easLaudo3'
+import { buscarEmBlocos } from '@/lib/buscarEmBlocos'
 
 export interface LabReportTemplate {
   id: string
@@ -35,21 +37,31 @@ export function useExamReportConfig() {
   const companyId = user?.companyId
   const [templates, setTemplates] = useState<LabReportTemplate[]>([])
   const [examRows, setExamRows] = useState<ExamReportRow[]>([])
+  const [laudos, setLaudos] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     if (!companyId) { setLoading(false); return }
     setLoading(true)
-    const [tpl, exs] = await Promise.all([
+    try {
+    const [tpl, exs, configs] = await Promise.all([
       supabase.from('lab_report_templates' as any).select('*').eq('company_id', companyId).order('name'),
       supabase
         .from('exams')
         .select('id,name,internal_code,report_template_id,report_single_page,report_observations')
         .eq('company_id', companyId),
+      buscarEmBlocos<any>((de, ate) => supabase.from('exam_laudos')
+        .select('id,exam_id,report_template_id,report_single_page,report_observations,parameters')
+        .eq('company_id', companyId).order('id').range(de, ate)),
     ])
     setTemplates(((tpl.data as any) || []) as LabReportTemplate[])
     setExamRows(((exs.data as any) || []) as ExamReportRow[])
-    setLoading(false)
+    setLaudos(configs.linhas)
+    } catch (error) {
+      console.error('Não foi possível carregar a configuração dos laudos:', error)
+    } finally {
+      setLoading(false)
+    }
   }, [companyId])
 
   useEffect(() => { load() }, [load])
@@ -62,17 +74,10 @@ export function useExamReportConfig() {
           examRows.find((r) => r.id === (e.catalogId || e.examCatalogId)) ||
           examRows.find((r) => norm(r.internal_code) && norm(r.internal_code) === norm(e.code)) ||
           examRows.find((r) => norm(r.name) === norm(e.name))
-        const tpl = row?.report_template_id
-          ? templates.find((t) => t.id === row.report_template_id)
-          : templates.find((t) => t.is_default && t.is_active)
-        return {
-          ...e,
-          reportObservations: e.reportObservations || row?.report_observations || '',
-          singlePage: e.singlePage ?? (row?.report_single_page || tpl?.single_page || false),
-          reportTemplate: tpl || null,
-        }
+        const laudo = laudos.find(l => l.id === e.laudoId && (!row || l.exam_id === row.id))
+        return configurarLaudoImpresso(e, row, laudo, templates)
       }),
-    [examRows, templates],
+    [examRows, templates, laudos],
   )
 
   return { templates, loading, reload: load, enrichExams }

@@ -1,7 +1,9 @@
 # Editar Exame — catálogo e laudos
 - [x] Exportar Catálogo e Importar Planilha junto ao Catálogo de Exames na edição; mesmo fluxo da lista. Conferido logado em Touros: download EAS com 22 parâmetros/22 referências e prévia da importação com zero erros, cancelada sem gravar.
 - [x] Configurar abre Parâmetros e Máscara do laudo selecionado, inclusive L001 já selecionado; L001/L002 conferidos logado em Touros, sem salvar nem alterar laudos/ativação. Oito testes passaram, sem erros na página e build OK.
-- [ ] Laudo 3 do EAS de Touros: aguarda envio do modelo pelo usuário.
+- [x] Criar Laudo 3 do EAS exclusivo de Touros conforme PDF recebido: L003 desativado, 23 campos e quatro grupos, referências do modelo, sem resultados pré-preenchidos; L001/L002 e exame conferidos por hash e intactos.
+- [x] Conferidos cadastro e prévia logado em Touros; PDF A4 de uma página com paciente de demonstração, sem cortes/sobreposição. Corrigida diferença de fuso na coleta entre corpo/rodapé; ambos mostram a mesma coleta. Dezenove testes passaram e build OK; sem salvar resultados nem imprimir fisicamente.
+- [ ] Ajustes no Laudo 2: aguardam as próximas instruções do usuário.
 
 # Etapas AxisInova (prompt-18)
 - [x] Corrigida a causa dos 205 pacientes: busca vazia interpretada como numérica ignorava Hoje. Reproduzidos 5 testes falhando antes; 29 passaram após exigir um dígito na busca. Conferidos lista, contador, Todos/1 por vez, filtros rápidos, recarga, Pendências Anteriores e Busca de Atendimentos; nenhuma alteração em dados ou permissões.

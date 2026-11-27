@@ -280,6 +280,9 @@ export default function LabCatalogFormPage() {
     setExamData(prev => ({
       ...prev,
       methodology: laudo.methodology || '',
+      reportTemplateId: laudo.report_template_id || '',
+      reportSinglePage: laudo.report_single_page ?? false,
+      reportObservations: laudo.report_observations || '',
       referenceValues: Array.isArray(laudo.reference_values) ? laudo.reference_values : [],
       resultDeadlineDays: laudo.result_deadline_days ?? prev.resultDeadlineDays,
       workbenchId: laudo.workbench_id || '',
@@ -306,6 +309,9 @@ export default function LabCatalogFormPage() {
       const finalData = {
         ...examData,
         methodology: isDefaultLaudo ? examData.methodology : (baseLaudo?.methodology || ''),
+        reportTemplateId: isDefaultLaudo ? examData.reportTemplateId : (baseLaudo?.report_template_id || ''),
+        reportSinglePage: isDefaultLaudo ? examData.reportSinglePage : (baseLaudo?.report_single_page ?? false),
+        reportObservations: isDefaultLaudo ? examData.reportObservations : (baseLaudo?.report_observations || ''),
         resultDeadlineDays: isDefaultLaudo ? examData.resultDeadlineDays : (baseLaudo?.result_deadline_days ?? examData.resultDeadlineDays),
         workbenchId: examBancadaId,
         selectedMaterials: isDefaultLaudo ? examData.selectedMaterials : (baseLaudo?.selected_materials || []),
@@ -320,7 +326,7 @@ export default function LabCatalogFormPage() {
       if (isEditing) {
         await updateExam({ 
           ...finalData, 
-          id: id!
+          id
         } as any)
       } else {
         const newExam = await addExam({
@@ -345,10 +351,13 @@ export default function LabCatalogFormPage() {
         const cid = profRow?.company_id;
         if (cid) {
           if (selectedLaudoId) {
-            await supabase
+            const { error: laudoError } = await supabase
               .from('exam_laudos')
               .update({
                 methodology: examData.methodology || null,
+                report_template_id: examData.reportTemplateId || null,
+                report_single_page: examData.reportSinglePage,
+                report_observations: examData.reportObservations || null,
                 parameters: parameters || [],
                 reference_values: examData.referenceValues || [],
                 result_deadline_days: examData.resultDeadlineDays ?? null,
@@ -358,9 +367,13 @@ export default function LabCatalogFormPage() {
                 material_tubos: (examData as any).materialTubos || {},
               } as any)
               .eq('id', selectedLaudoId)
+            if (laudoError) throw laudoError
           } else {
             await ensureDefaultLaudo(examId, cid, {
               methodology: examData.methodology,
+              reportTemplateId: examData.reportTemplateId,
+              reportSinglePage: examData.reportSinglePage,
+              reportObservations: examData.reportObservations,
               parameters,
               referenceValues: examData.referenceValues,
               resultDeadlineDays: examData.resultDeadlineDays,

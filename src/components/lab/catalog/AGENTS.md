@@ -1,2 +1,3 @@
 - CatalogSpreadsheetActions owns spreadsheet buttons and export logic for both the catalog list and exam editor; reuse the existing import dialog and saved exam data. Why: identical spreadsheets without duplicate flows or exporting unsaved drafts.
 - ExamLaudosSection separates selection from configuration; configuring a report opens the editor's parameters tab even when it is already selected. Why: the button must always open a visible editing destination.
+- Each exam_laudos row owns report_template_id, report_single_page and report_observations as well as its parameters; editing a non-default report preserves the default exam configuration. Why: alternative report layouts must never replace L001.

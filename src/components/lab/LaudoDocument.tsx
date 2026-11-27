@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 import { buildLaudoTagContext, renderLaudoTemplate } from '@/utils/laudoTags';
 import { differentialReportRows } from '@/utils/hematologyDifferential';
 import { supabase } from '@/integrations/supabase/client';
+import { EasLaudo3Document } from './EasLaudo3Document';
+import { coletaEasLaudo3, isEasLaudo3 } from '@/lib/easLaudo3';
 
 
 interface LaudoDocumentProps {
@@ -248,6 +250,10 @@ function ExamBlock({ exam, order, equipmentTypes }: { exam: any; order?: any; eq
   const tpl = exam.reportTemplate || null;
   const ctx = React.useMemo(() => buildLaudoTagContext(order || {}, exam, {}), [order, exam]);
 
+  if (isEasLaudo3(exam) && !exam.apoioEmAndamento && !exam.apoioPdfAnexo) {
+    return <EasLaudo3Document exam={exam} order={order} />;
+  }
+
   return (
     <div className="exame-section break-inside-avoid">
       <h3 className="text-[13px] font-semibold uppercase tracking-wide text-zinc-800">{exam.name}</h3>
@@ -447,7 +453,7 @@ export default function LaudoDocument({
       {(pages.length ? pages : [{ workbench: 'Geral', order: 0, exams: [] }]).map((page, pageIdx) => (
         <div
           key={page.workbench + pageIdx}
-          className="laudo-print laudo-page bg-white p-10 font-sans text-zinc-900 w-[794px] min-h-[1123px] mx-auto shadow-sm flex flex-col print:shadow-none print:m-0 print:w-full"
+          className={cn("laudo-print laudo-page bg-white p-10 font-sans text-zinc-900 w-[794px] min-h-[1123px] mx-auto shadow-sm flex flex-col print:shadow-none print:m-0 print:w-full", page.exams.some(isEasLaudo3) && 'eas3-page')}
         >
           {isRetified && retificationDetails && pageIdx === 0 && (
             <div className="mb-6 p-4 border-2 border-orange-500 bg-orange-50 text-orange-900 rounded-lg no-print">
@@ -489,7 +495,7 @@ export default function LaudoDocument({
               <div className="space-y-1">
                 <p>
                   <span className="text-zinc-500">Data da coleta:</span>{' '}
-                  <span className="font-medium">{fmtDateTime((order as any).collectionTime)}</span>
+                  <span className="font-medium">{isEasLaudo3(page.exams[0]) ? coletaEasLaudo3(page.exams[0], order) : fmtDateTime((order as any).collectionTime)}</span>
                 </p>
                 {approversOf(page.exams).length <= 1 && (
                   <p>
