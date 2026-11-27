@@ -146,19 +146,19 @@ Deno.serve(async (req) => {
         signal: controller.signal,
         redirect: 'manual',
       })
-      const text = (await res.text().catch(() => '')).slice(0, 2000)
+      // O conteúdo da resposta do destino não volta ao navegador (só o status)
+      await res.body?.cancel().catch(() => {})
       return json({
         ok: res.ok,
         status: res.status,
         duration_ms: Date.now() - started,
-        response: text,
       })
     } catch (err) {
       return json({
         ok: false,
         status: 0,
         duration_ms: Date.now() - started,
-        error: err instanceof Error ? err.message : 'Falha de conexão com o servidor de destino',
+        error: 'Falha de conexão com o servidor de destino',
       })
     } finally {
       clearTimeout(timer)

@@ -28,6 +28,8 @@ export async function autenticar(req: Request, admin: any, perm?: string): Promi
     if (!ok) return json({ error: 'Você não tem permissão para esta ação' }, 403)
   }
   const { data: cid } = await client.rpc('get_user_company_id', { _user_id: user.id })
+  // Usuário sem empresa nunca roda rotinas (evita varrer os laboratórios de todas as empresas)
+  if (!cid || typeof cid !== 'string') return json({ error: 'Usuário sem empresa vinculada' }, 403)
   definirOrigem('manual', user.id)
   return { tipo: 'usuario', userId: user.id, companyId: cid as string, client }
 }

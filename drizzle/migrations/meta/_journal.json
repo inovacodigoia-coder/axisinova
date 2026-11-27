@@ -1450,6 +1450,13 @@
       "when": 1795717630353,
       "tag": "0206_ocultar_campos_restricao_origem",
       "breakpoints": true
+    },
+    {
+      "idx": 207,
+      "version": "7",
+      "when": 1795778910123,
+      "tag": "0207_seguranca_liberar_concluir_admissao_lockout",
+      "breakpoints": true
     }
   ]
 }

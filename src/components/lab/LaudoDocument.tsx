@@ -294,7 +294,7 @@ function ExamBlock({ exam, order, equipmentTypes }: { exam: any; order?: any; eq
       {tpl?.body_html && (
         <div
           className="laudo-tpl text-[9.5px] text-zinc-700 whitespace-pre-line mt-2"
-          dangerouslySetInnerHTML={{ __html: renderLaudoTemplate(tpl.body_html, ctx) }}
+          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(renderLaudoTemplate(tpl.body_html, ctx)) }}
         />
       )}
 
