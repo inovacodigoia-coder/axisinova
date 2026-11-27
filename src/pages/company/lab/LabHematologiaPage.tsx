@@ -319,10 +319,10 @@ export default function LabHematologiaPage() {
   /** Layout do equipamento selecionado (p8000 e Count_380 implementados). */
   const equipmentLayout = useMemo(() => {
     const serial = String(selectedEquipment?.serial_number || '').toLowerCase().replace(/[\s-]/g, '_')
+    // Todas as empresas: aparelho marcado como "3 partes" sempre usa a regra do Count 380 (Serrinha).
+    if (String(selectedEquipment?.differential_type || '').startsWith('3')) return EQUIPMENT_LAYOUTS.count_380
     const own = EQUIPMENT_LAYOUTS[serial]
     if (own) return own
-    // Qualquer aparelho marcado como "3 partes" usa a mesma tela do Count 380.
-    if (String(selectedEquipment?.differential_type || '').startsWith('3')) return EQUIPMENT_LAYOUTS.count_380
     return null
   }, [selectedEquipment])
   const hasEquipmentLayout = true
