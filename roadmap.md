@@ -1,4 +1,5 @@
 # Etapas AxisInova (prompt-18)
+- [x] Corrigida a causa dos 205 pacientes: busca vazia interpretada como numérica ignorava Hoje. Reproduzidos 5 testes falhando antes; 29 passaram após exigir um dígito na busca. Conferidos lista, contador, Todos/1 por vez, filtros rápidos, recarga, Pendências Anteriores e Busca de Atendimentos; nenhuma alteração em dados ou permissões.
 - [x] Recorte de datas compartilhado pela lista e janela Digitação: Hoje em 27/11/2026 exclui atendimentos de 24/11, em Todos e 1 por vez; 20 testes passaram e build OK, preservando Pendências Anteriores e busca direta.
 - [ ] Conferir esta correção com login real: prévia redireciona para /login; depende de sessão autorizada, não foi gerada sessão em nome de usuário.
 - [x] Etapa 1: laudo_code opcional — padrão laudo do resultado/item/bancada/ordem 1, 409 para código inválido, bench_laudos na lista; publicado.

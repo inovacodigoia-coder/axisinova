@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { buildSampleCode, generateSampleHash } from '@/utils/orderHash'
 import { indiceDeEtiquetas, pedidosDaEtiqueta, buscaSoNumeros } from './buscaEtiqueta'
+import { filtrarExamesDigitacao } from './pendenciasAnalise'
 
 const pedido = (id: string, orderNumber: string) => ({
   id, orderNumber, empresaSeq: 1,
@@ -12,6 +13,23 @@ const indice = indiceDeEtiquetas(pedidos, 1)
 const hashA = generateSampleHash(buildSampleCode('310-01', 1, 1))
 
 describe('busca pelo código alfanumérico da etiqueta', () => {
+  it('busca vazia ou só espaços não é busca por número', () => {
+    expect(buscaSoNumeros('')).toBe(false)
+    expect(buscaSoNumeros('   ')).toBe(false)
+    expect(buscaSoNumeros('\n\t')).toBe(false)
+  })
+
+  it('pontuação sem dígitos não é busca por número', () => {
+    expect(buscaSoNumeros('-')).toBe(false)
+    expect(buscaSoNumeros('...')).toBe(false)
+  })
+
+  it('Hoje em 27/11 com busca vazia exclui atendimento de 24/11', () => {
+    const exams = [{ id: '27', registeredAt: '2026-11-27' }, { id: '24', registeredAt: '2026-11-24' }]
+    const selected = filtrarExamesDigitacao(exams, { period: 'hoje', ignorarPeriodo: buscaSoNumeros('') }, new Date(2026, 10, 27, 13))
+    expect(selected.map(exam => exam.id)).toEqual(['27'])
+  })
+
   it('colar o código do tubo traz só o pedido daquela etiqueta', () => {
     expect([...(pedidosDaEtiqueta(indice, hashA) || [])]).toEqual(['a'])
   })

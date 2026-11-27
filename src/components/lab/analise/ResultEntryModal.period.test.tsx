@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResultEntryModal } from './ResultEntryModal';
+import { buscaSoNumeros } from '@/lib/buscaEtiqueta';
 
 const apoio = vi.hoisted(() => ({ porExame: {}, recarregar: vi.fn() }));
 
@@ -34,7 +35,7 @@ describe('recorte de pacientes ao abrir Digitação', () => {
   afterEach(() => { cleanup(); vi.useRealTimers(); });
 
   it('Hoje não mostra paciente de 24/11 em Todos nem em 1 por vez', async () => {
-    render(<ResultEntryModal {...props} filters={filters} />);
+    render(<ResultEntryModal {...props} filters={{ ...filters, ignorarPeriodo: buscaSoNumeros('') }} />);
     expect(await screen.findByText('Paciente de hoje')).toBeInTheDocument();
     expect(screen.queryByText('Paciente de 24 novembro')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '1 por vez' }));
@@ -45,6 +46,14 @@ describe('recorte de pacientes ao abrir Digitação', () => {
     const { rerender } = render(<ResultEntryModal {...props} filters={{ ...filters, period: '7d' }} />);
     expect(await screen.findByText('Paciente de 24 novembro')).toBeInTheDocument();
     rerender(<ResultEntryModal {...props} filters={filters} />);
+    expect(screen.queryByText('Paciente de 24 novembro')).not.toBeInTheDocument();
+    expect(screen.getByText('Paciente de hoje')).toBeInTheDocument();
+  });
+
+  it('apagar uma busca numérica restaura Hoje e remove o atendimento de 24/11', async () => {
+    const { rerender } = render(<ResultEntryModal {...props} filters={{ ...filters, ignorarPeriodo: buscaSoNumeros('24-01') }} />);
+    expect(await screen.findByText('Paciente de 24 novembro')).toBeInTheDocument();
+    rerender(<ResultEntryModal {...props} filters={{ ...filters, ignorarPeriodo: buscaSoNumeros('') }} />);
     expect(screen.queryByText('Paciente de 24 novembro')).not.toBeInTheDocument();
     expect(screen.getByText('Paciente de hoje')).toBeInTheDocument();
   });

@@ -69,7 +69,7 @@ export function pedidosDaEtiqueta(indice: Map<string, Set<string>>, busca: strin
   return indice.get(termo) || null
 }
 
-/** Busca só por números (pedido, CPF) — texto com letras, como o código do tubo, nunca cai nela. */
+/** Busca com dígitos (pedido, CPF); vazios e textos com letras nunca ativam a busca numérica. */
 export function buscaSoNumeros(busca: string): boolean {
-  return !/[a-z]/i.test(busca)
+  return /\d/.test(busca) && !/[a-z]/i.test(busca)
 }
